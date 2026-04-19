@@ -1,0 +1,79 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+
+node_modules
+.next
+.env.local
+.env
+build
+dist
+out
+
+
+# # 1. تهيئة المستودع (Initialize git)
+# git init
+
+# # 2. إضافة كل الملفات (Add all files)
+# git add .
+
+# # 3. حفظ التغييرات برسالة (Commit)
+# git commit -m "Initialize project and fix scroll issue"
+
+# # 4. تغيير اسم الفرع لـ main (اختياري بس مستحسن)
+# git branch -M main
+
+# # 5. ربط المشروع برابط المستودع على جيت هاب (غير الرابط برابط مستودعك)
+# git remote add origin https://github.com/AhmedAdelwebdev/Friendly-Ui
+
+# # 6. رفع الملفات (Push)
+# git push -u origin main
+
+
+# لو عملت تعديلات تانية وعاوز ترفعها، استخدم الأوامر دي بس:
+# git add .
+# git commit -m "Brief description of changes"
+# git push
+
+
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+
+
+
+# testing
+/coverage
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# env files (can opt-in for committing if needed)
+.env*
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
