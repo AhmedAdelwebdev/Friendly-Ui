@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import Image from 'next/image';
 import { DEFAULT_IMAGE } from '@/lib/data';
+import { LoadingOverlay } from '@/components/LoadingOverlay';
 
 const CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '';
 
@@ -377,6 +378,9 @@ export default function OrdersDashboard() {
 
   return (
     <div className="min-h-screen pb-20 w-screen relative left-1/2 -translate-x-1/2 bg-gray-50/30">
+      {loading && <LoadingOverlay />}
+      {checkingAuth && <LoadingOverlay message="Securing session" />}
+      
       <nav className="w-full bg-white border-b border-gray-100 sticky top-0 z-30">
         <div className="max-w-6xl mx-auto w-full px-4 h-16 flex items-center gap-2 justify-between">
           <div className="flex items-center gap-3">

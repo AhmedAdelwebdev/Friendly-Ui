@@ -91,11 +91,8 @@ export default function DesignsPage() {
     <div className="py-10 md:py-16">
 
       {/* Loading */}
-      {(loading && items.length === 0) && (
-        <div className="fixed inset-0 z-[300] backdrop-blur-sm flex flex-col items-center justify-center">
-          <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-          <p className="mt-4 font-bold text-gray-500 animate-pulse">Loading...</p>
-        </div>
+      {loading && items.length === 0 && (
+        <LoadingOverlay message="Exploring library..." />
       )}
 
       <div className="w-full">

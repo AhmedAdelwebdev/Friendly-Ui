@@ -35,6 +35,7 @@ export const Header = () => {
           <nav className="hidden md:flex items-center gap-6 text-sm font-semibold">
             <Link href="/designs" className={`transition-colors ${isActive('/designs') ? 'text-primary' : 'text-gray-600 dark:text-gray-400 hover:text-primary'}`}>Designs</Link>
             <Link href="/about" className={`transition-colors ${isActive('/about') ? 'text-primary' : 'text-gray-600 dark:text-gray-400 hover:text-primary'}`}>About</Link>
+            <Link href="/contact" className={`transition-colors ${isActive('/contact') ? 'text-primary' : 'text-gray-600 dark:text-gray-400 hover:text-primary'}`}>Contact</Link>
           </nav>
 
           {/* Right Side */}
@@ -75,6 +76,7 @@ export const Header = () => {
         <div className="md:hidden border-t border-gray-100 py-3 px-4 flex flex-col gap-1">
           <Link href="/designs" onClick={() => setIsMenuOpen(false)} className="py-2.5 px-3 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:text-primary hover:bg-primary/5 rounded-xl transition-all">Designs</Link>
           <Link href="/about" onClick={() => setIsMenuOpen(false)} className="py-2.5 px-3 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:text-primary hover:bg-primary/5 rounded-xl transition-all">About</Link>
+          <Link href="/contact" onClick={() => setIsMenuOpen(false)} className="py-2.5 px-3 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:text-primary hover:bg-primary/5 rounded-xl transition-all">Contact</Link>
         </div>
       )}
     </header>

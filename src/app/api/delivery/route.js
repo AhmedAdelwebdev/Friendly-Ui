@@ -37,7 +37,7 @@ export async function POST(request) {
     };
 
     const message = `
-<b>Friendly UI — Order Complete ✅</b>
+<b>✅ Friendly UI — Order Complete</b>
 
 Hi <b>${order.name || 'there'}</b>,  
 Your order has been processed successfully and everything is ready.
@@ -52,7 +52,7 @@ You can access your files anytime using the link above.
 
 ---
 
-<b>Friendly UI — تم تنفيذ الطلب ✅</b>
+<b>✅ Friendly UI — تم تنفيذ الطلب</b>
 
 مرحباً <b>${order.name || 'بك'}</b>،  
 تم تنفيذ طلبك بنجاح وكل حاجة جاهزة الآن.
@@ -65,7 +65,7 @@ ${getDownloadLink(fileLink)}
 
 يمكنك تحميل الملفات في أي وقت من خلال الرابط بالأعلى.
 
-<b>Thank you for choosing Friendly UI</b>
+Thank you for choosing <b>Friendly UI</b>
     `.trim();
 
     const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;

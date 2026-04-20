@@ -8,6 +8,7 @@ import { X, CheckCircle, AlertCircle, Upload, CreditCard, Download, ShieldCheck,
 import { PayPalButtons } from "@paypal/react-paypal-js";
 import { DEFAULT_IMAGE } from '@/lib/data';
 import Link from 'next/link';
+import { LoadingOverlay } from '@/components/LoadingOverlay';
 
 const EGP_RATE = 60; // 1 USD = 60 EGP
 
@@ -46,6 +47,7 @@ export const PaymentModal = ({ host, protocol }) => {
   const [showWhatsApp, setShowWhatsApp] = useState(false);
   const [analyzingOCR, setAnalyzingOCR] = useState(false);
   const [lang, setLang] = useState('en');
+  const [copiedType, setCopiedType] = useState(null); // 'start' or 'command'
 
   const pollIntervalRef = useRef(null);
 
@@ -68,9 +70,15 @@ export const PaymentModal = ({ host, protocol }) => {
       const savedTgId = localStorage.getItem('friendly_telegram_chat_id');
       if (savedTgId) {
         setTelegramId(savedTgId);
+        setTelegramCode(savedTgId); // Use ID as code for re-linking if needed
         setStep(1); // skip to info
       } else {
-        const code = Math.random().toString(36).substring(2, 10).toUpperCase();
+        // Try to get existing code from localStorage to survive refreshes
+        let code = localStorage.getItem('friendly_telegram_auth_code');
+        if (!code) {
+          code = 'AUTH_' + Math.random().toString(36).substring(2, 8).toUpperCase();
+          localStorage.setItem('friendly_telegram_auth_code', code);
+        }
         setTelegramCode(code);
         setStep(0);
       }
@@ -97,6 +105,7 @@ export const PaymentModal = ({ host, protocol }) => {
           if (data.status === 'success' && data.chatId) {
             clearInterval(pollIntervalRef.current);
             localStorage.setItem('friendly_telegram_chat_id', data.chatId.toString());
+            localStorage.removeItem('friendly_telegram_auth_code'); // Clean up code
             setTelegramId(data.chatId.toString());
             if (data.firstName) {
               setUserInfo(prev => ({ ...prev, name: prev.name || data.firstName }));
@@ -141,6 +150,12 @@ export const PaymentModal = ({ host, protocol }) => {
   // Helper for text direction
   const isAr = lang === 'ar';
   const txIsAr = (en, ar) => isAr ? ar : en;
+
+  const handleCopy = (text, type) => {
+    navigator.clipboard.writeText(text);
+    setCopiedType(type);
+    setTimeout(() => setCopiedType(null), 2000);
+  };
 
   // Core Payment logic (same OCR logic + Telegram notify instead of email logic)
   const sendTelegramNotification = async (data) => {
@@ -471,25 +486,15 @@ Order Details
           </div>
 
           <div className="flex-1 min-h-[50vh] max-w-sm w-full mx-auto sm:max-w-none sm:mx-0">
-            {analyzingOCR ? (
-              <div className="absolute inset-0 z-50 bg-white backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center animate-in fade-in duration-300">
-                <div className="relative w-16 h-16 mb-4">
-                  <div className="absolute inset-0 border-4 border-primary/20 rounded-full" />
-                  <div className="absolute inset-0 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-                  <div className="absolute inset-0 flex items-center justify-center text-primary"><ShieldCheck size={28} className="animate-pulse" /></div>
-                </div>
-                <h3 className="text-lg text-gray-900 mb-1">{txIsAr('AI Analyzing...', 'جاري تحليل الصورة')}</h3>
-              </div>
-            ) : status === 'processing' ? (
-              <div className="absolute inset-0 z-50 bg-white backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center animate-in fade-in duration-300">
-                <div className="relative w-16 h-16 mb-4">
-                  <div className="absolute inset-0 border-4 border-primary/20 rounded-full" />
-                  <div className="absolute inset-0 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-                  <div className="absolute inset-0 flex items-center justify-center text-primary"><Upload size={28} className="animate-bounce" /></div>
-                </div>
-                <h3 className="text-lg text-gray-900 mb-1">{txIsAr('Almost There', 'لحظات من فضلك')}</h3>
-              </div>
-            ) : status === 'success' ? (
+            {analyzingOCR && (
+              <LoadingOverlay type="ocr" message={txIsAr('AI Analyzing', 'جاري تحليل الصورة ذكياً')} />
+            )}
+            
+            {status === 'processing' && (
+              <LoadingOverlay type="upload" message={txIsAr('Almost There', 'لحظات من فضلك')} />
+            )}
+
+            {status === 'success' ? (
               <div className="h-full flex flex-col items-center justify-center text-center animate-in zoom-in-95 duration-500 p-2">
                 <div className="text-green-500 mb-6">
                   <CheckCircle size={40} strokeWidth={2.5} className="animate-in zoom-in duration-700 delay-300" />
@@ -507,13 +512,46 @@ Order Details
             ) : (
               <>
                 {step === 0 && (
-                  <div className="animate-in fade-in slide-in-from-right-10 duration-500 flex flex-col items-center justify-center text-center py-4">
-                    <h3 className="text-xl text-gray-900 mb-3">{txIsAr('Telegram Connection Required', 'مطلوب ربط حساب تليجرام')}</h3>
-                    <p dir={isAr ? "rtl" : "ltr"} className="text-gray-500 mb-8 text-sm leading-relaxed max-w-sm">
-                      {txIsAr('Click the "Connect Telegram Account" button, then press ', 'اضغط على زر "ربط حساب تيليجرام" ثم اضغط .')}
-                      <code className="text-primary select-all">/start</code>
-                      {txIsAr(' inside the app, and return to the website to complete payment. Your product files will be securely sent to your Telegram account after purchase.', ' داخل التطبيق، وبعدها ارجع للموقع لإكمال عملية الدفع. سيتم إرسال ملفات المنتج إلى حسابك على تيليجرام بعد الشراء.')}
-                    </p>
+                  <div className="animate-in fade-in slide-in-from-right-10 duration-500 flex flex-col items-center justify-center text-center py-2">
+                    <div className="bg-primary/5 p-4 rounded-2xl border border-primary/10 mb-6 text-primary">
+                       <p className="text-sm font-medium">
+                         {txIsAr('Follow these 3 steps to link your account:', 'اتبع هذه الخطوات الثلاث لربط حسابك:')}
+                       </p>
+                    </div>
+
+                    <div className="w-full max-w-sm space-y-6 mb-8 text-right" dir={isAr ? 'rtl' : 'ltr'}>
+                      <div className="flex gap-4">
+                        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center font-bold text-sm">1</div>
+                        <p className="text-sm text-gray-600 leading-relaxed pt-1">
+                          {txIsAr('Click the "Connect Telegram" button below to open the website, not app.', 'اضغط على زر "ربط حساب تليجرام" أدناه ليفتح لك الموقع , وليس التطبيق.')}
+                        </p>
+                      </div>
+
+                      <div className="flex gap-4">
+                        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center font-bold text-sm">2</div>
+                        <div className="flex-1 space-y-3">
+                          <p className="text-sm text-gray-600 leading-relaxed pt-1">
+                            {txIsAr('Press the ', 'بمجرد فتح التطبيق، اضغط على زر ')}
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded font-bold bg-primary/10 text-primary mx-1">START</span>
+                            {txIsAr(' button or copy/paste this command: ', ' أو انسخ هذا الكود والصقه: ')}
+                          </p>
+                          <button 
+                            onClick={() => handleCopy(`/start ${telegramCode}`, 'command')}
+                            className={`w-full flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl font-bold transition-all ${copiedType === 'command' ? 'bg-green-500/10 text-green-600 border border-green-500/20' : 'bg-gray-50 text-gray-700 border border-gray-200 hover:bg-gray-100'}`}
+                          >
+                            <span className="text-[11px] font-mono tracking-wider">/start {telegramCode}</span>
+                            {copiedType === 'command' ? <Check size={16} /> : <Copy size={16} />}
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="flex gap-4">
+                        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center font-bold text-sm">3</div>
+                        <p className="text-sm text-gray-600 leading-relaxed pt-1">
+                          {txIsAr('Wait for the connection to happen automatically, then return here.', 'انتظر ثوانٍ حتى يتم الربط تلقائياً، ثم ارجع هنا للموقع.')}
+                        </p>
+                      </div>
+                    </div>
 
                     {telegramId ? (
                       <>
@@ -525,10 +563,11 @@ Order Details
                       </button>
                       </>
                     ) : (
-                      <Link href={`https://t.me/${BOT_USERNAME}?start=${telegramCode}}`}
+                      <Link href={`https://t.me/${BOT_USERNAME}?start=${telegramCode}`}
                         target="_blank" rel="noopener noreferrer" 
-                        className="w-full max-w-sm flex items-center justify-center gap-2 bg-[#0088cc] text-white py-4 px-6 rounded-xl shadow-lg shadow-[#0088cc]/20 hover:bg-[#0077b3] transition-all"
+                        className="w-full max-w-sm flex items-center justify-center gap-2 bg-[#0088cc] text-white py-4 px-6 rounded-2xl shadow-lg shadow-[#0088cc]/20 hover:bg-[#0077b3] transition-all hover:scale-[1.02] active:scale-[0.98]"
                       >
+                        <MessageSquare size={18} />
                         {txIsAr('Connect Telegram Account', 'ربط حساب تليجرام')} <ArrowRight size={18} className={isAr ? 'rotate-180' : ''} />
                       </Link>
                     )}

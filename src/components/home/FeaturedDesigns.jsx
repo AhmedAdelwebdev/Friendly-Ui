@@ -3,6 +3,7 @@
 import { useData } from '@/lib/DataContext';
 import { DesignCard } from '@/components/designs/DesignCard';
 import Link from 'next/link';
+import { LoadingOverlay } from '../LoadingOverlay';
 
 export const FeaturedDesigns = ({ type = 'Design', title = 'Featured Designs', limit = 8 }) => {
   const { items: allItems, loading } = useData();
@@ -10,13 +11,7 @@ export const FeaturedDesigns = ({ type = 'Design', title = 'Featured Designs', l
   // Filter items based on type and slice for limit
   const items = allItems.filter(item => item.type == type).slice(0, limit);
   if (loading && allItems.length === 0) {
-    return (
-      <section className={`py-12 md:py-16 ${type === 'Product' ? 'bg-gray-100/30' : ''}`}>
-        <div className=" mx-auto px-4 flex justify-center items-center py-20">
-          <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-        </div>
-      </section>
-    );
+    return <LoadingOverlay message={`Loading ${type}s...`} />;
   }
 
   if (items.length === 0) return null;

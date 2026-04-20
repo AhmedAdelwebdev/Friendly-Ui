@@ -14,7 +14,7 @@ export async function POST(request) {
     }
 
     const message = `
-<b>Friendly UI — Order Received 📥</b>
+<b>Friendly UI — Order Received</b>
 
 Hi <b>${name || 'there'}</b>,
 We have received your order for:
@@ -27,7 +27,7 @@ If you have any questions, feel free to contact us Telegram:
 
 ---
 
-<b>Friendly UI — تم استلام الطلب 📥</b>
+<b>Friendly UI — تم استلام الطلب</b>
 
 مرحباً <b>${name || 'بك'}</b>،
 لقد استلمنا طلبك لمنتج:

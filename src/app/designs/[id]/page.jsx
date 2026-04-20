@@ -9,6 +9,7 @@ import { ProductInfo } from '@/components/designs/ProductInfo';
 import { RelatedSection } from '@/components/designs/RelatedSection';
 import { MessageCircle } from 'lucide-react';
 import { useMemo } from 'react';
+import { LoadingOverlay } from '@/components/LoadingOverlay';
 
 export default function ProductDetailPage() {
   const { id } = useParams();
@@ -50,14 +51,7 @@ export default function ProductDetailPage() {
 
   if (!item) {
     if (!item || (loading && items.length === 0)) {
-      return (
-        <div className="min-h-screen">
-          <div className="fixed inset-0 top-20 z-[300] flex flex-col items-center justify-center">
-            <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-            <p className="mt-4 font-bold text-primary/60 animate-pulse">Loading...</p>
-          </div>
-        </div>
-      );
+      return <LoadingOverlay />;
     }
     // return (
     //   <div className="min-h-screen flex items-center justify-center flex-col text-center p-4">
