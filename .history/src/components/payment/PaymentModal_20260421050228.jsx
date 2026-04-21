@@ -172,7 +172,7 @@ export const PaymentModal = () => {
         `\n• ${userInfo.contact}` +
         `\n\nOrder Details` +
         `\n• ${escapeHTML(activeItem.title)}` +
-        `\n\n• Price: $${Number(activeItem.price)} (${priceEGP} EGP)` +
+        `\n\• Price: $${Number(activeItem.price)} (${priceEGP} EGP)` +
         `\n• Method: ${method?.toUpperCase()}` + (!isAttempt ?
         `\n• Order ID: <code>${orderId}</code>` : '');
 

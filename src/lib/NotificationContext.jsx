@@ -20,16 +20,19 @@ export const NotificationProvider = ({ children }) => {
 
   const reportError = useCallback(async (error, context = 'General') => {
     const errorMsg = typeof error === 'string' ? error : (error?.message || 'Unknown Error');
+    const storageKey = `error_log_${context}_${errorMsg.replace(/\s+/g, '_')}`;
     
-    // Prevent client-side spam: Check if this specific error was reported in last 30s
+    // Prevent spam using localStorage (sustains between refreshes)
     const now = Date.now();
-    const lastReported = reportedLogs.current.get(errorMsg);
-    if (lastReported && (now - lastReported < 30000)) return;
-    
-    reportedLogs.current.set(errorMsg, now);
+    const lastReported = localStorage.getItem(storageKey);
+    const TWENTY_MINUTES = 20 * 60 * 1000;
 
-    // Show toast
-    showNotification(errorMsg, 'error');
+    if (lastReported && (now - parseInt(lastReported) < TWENTY_MINUTES)) {
+      console.log(`[Throttled] Error already reported in last 20m: ${errorMsg}`);
+      return;
+    }
+    
+    localStorage.setItem(storageKey, now.toString());
 
     // Silent report to Telegram
     try {
@@ -45,7 +48,7 @@ export const NotificationProvider = ({ children }) => {
     } catch (e) {
       console.error('Logging failed', e);
     }
-  }, [showNotification]);
+  }, []);
 
   const hideNotification = useCallback(() => {
     setNotification(null);

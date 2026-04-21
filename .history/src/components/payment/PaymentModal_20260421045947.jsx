@@ -169,10 +169,10 @@ export const PaymentModal = () => {
       const message = (isAttempt ? `⭐ <b>Payment Attempt</b>` : `😎 <b>New Order Received</b>`) +
         `\n\nCustomer` +
         `\n• Name: ${escapeHTML(userInfo.name)}` +
-        `\n• ${userInfo.contact}` +
+        `\n• Contact: ${userInfo.contact}` +
         `\n\nOrder Details` +
-        `\n• ${escapeHTML(activeItem.title)}` +
-        `\n\n• Price: $${Number(activeItem.price)} (${priceEGP} EGP)` +
+        `\n•  ${escapeHTML(activeItem.title)}` +
+        `\n• Price: $${Number(activeItem.price)} (${priceEGP} EGP)` +
         `\n• Method: ${method?.toUpperCase()}` + (!isAttempt ?
         `\n• Order ID: <code>${orderId}</code>` : '');
 
