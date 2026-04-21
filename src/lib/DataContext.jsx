@@ -28,10 +28,10 @@ export const DataProvider = ({ children }) => {
       const res = await fetch('/api/products');
       if (res.status === 503) {
         setIsBackendDown(true);
-        showNotification('Database is currently offline. Using offline mode.', 'error');
+        reportError('Database Offline: Site is running on fallback data.', 'Inventory Sync');
         throw new Error('Backend is currently offline');
       }
-      if (!res.ok) throw new Error('Network error');
+      if (!res.ok) throw new Error(`HTTP Error ${res.status}`);
       
       const data = await res.json();
       if (data && data.length > 0) {
@@ -42,7 +42,11 @@ export const DataProvider = ({ children }) => {
     } catch (err) {
       console.warn("DataContext fetch error:", err);
       setError(err.message);
-      // If we already know the backend is down, keep the state
+      setIsBackendDown(true); // BLOCK PURCHASES 
+      // Only report if it's not a 503 (since 503 is reported above)
+      if (err.message !== 'Backend is currently offline') {
+        reportError(`Inventory Fetch Failed: ${err.message}. Using default products.`, 'Inventory Sync');
+      }
     } finally {
       if (!silent) setLoading(false);
     }
@@ -56,10 +60,14 @@ export const DataProvider = ({ children }) => {
         const data = await res.json();
         
         if (!res.ok || data.status !== 'healthy') {
+          setIsBackendDown(true); // BLOCK PURCHASES
           const errorMsg = `Configuration Error (${res.status}): ${data.missing?.join(', ')}`;
           reportError(errorMsg, 'Health Check');
+        } else {
+          setIsBackendDown(false);
         }
       } catch (err) {
+        setIsBackendDown(true); // BLOCK PURCHASES
         reportError(`Critical: Health check failed (${err.message})`, 'Startup Check');
       }
     };

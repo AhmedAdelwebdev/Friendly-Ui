@@ -21,28 +21,35 @@ export const NotificationProvider = ({ children }) => {
   const reportError = useCallback(async (error, context = 'General') => {
     const errorMsg = typeof error === 'string' ? error : (error?.message || 'Unknown Error');
     const now = Date.now();
-    const REFRACTORY_PERIOD = 20 * 60 * 1000; // 20 minutes in milliseconds
     
-    // 1. Check persistent storage (localStorage) to prevent spam across refreshes
+    // 15 minutes for production, 30 seconds for localhost testing
+    const isDev = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+    const REFRACTORY_PERIOD = isDev ? 30000 : 15 * 60 * 1000; 
+    
+    // 1. Show toast (ALWAYS show the local toast so the site owner knows something is wrong)
+    showNotification(errorMsg, 'error');
+
+    // 2. Check persistent storage to prevent Telegram spam
+    let shouldSendToTelegram = true;
     try {
-      const storageKey = `last_reported_${errorMsg.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 50)}`;
+      const hash = `${context}_${errorMsg}`.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 60);
+      const storageKey = `last_reported_${hash}`;
       const lastSent = localStorage.getItem(storageKey);
       
       if (lastSent && (now - parseInt(lastSent) < REFRACTORY_PERIOD)) {
-        console.log(`[Notification] Suppression active for: ${errorMsg}. Next report allowed in ${Math.round((REFRACTORY_PERIOD - (now - parseInt(lastSent))) / 60000)}m`);
-        return;
+        console.log(`[Notification] Telegram report suppressed for: ${errorMsg}. (Re-opens in ${Math.round((REFRACTORY_PERIOD - (now - parseInt(lastSent))) / 60000)}m)`);
+        shouldSendToTelegram = false;
+      } else {
+        localStorage.setItem(storageKey, now.toString());
       }
-      
-      localStorage.setItem(storageKey, now.toString());
     } catch (e) {
-      // Fallback for private browsing where localStorage might fail
+      // Fallback for private browsing
       const lastReported = reportedLogs.current.get(errorMsg);
-      if (lastReported && (now - lastReported < REFRACTORY_PERIOD)) return;
+      if (lastReported && (now - lastReported < REFRACTORY_PERIOD)) shouldSendToTelegram = false;
       reportedLogs.current.set(errorMsg, now);
     }
 
-    // 2. Show toast (always show the toast so user knows something is wrong locally)
-    showNotification(errorMsg, 'error');
+    if (!shouldSendToTelegram) return;
 
     // 3. Silent report to Telegram
     try {
