@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { getRecords, createRecord, getTableFields } from '@/lib/airtable';
+import { logErrorToTelegram } from '@/lib/error-logger';
 
 const rateLimit = new Map();
 
@@ -21,6 +22,9 @@ function sanitize(str) {
 }
 
 export async function GET(request) {
+  if (!process.env.AIRTABLE_PAT || !process.env.AIRTABLE_BASE_ID) {
+    return NextResponse.json({ error: 'Backend Configuration Missing', code: 'CONFIG_ERROR' }, { status: 503 });
+  }
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
@@ -61,11 +65,15 @@ export async function GET(request) {
     
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   } catch (error) {
+    await logErrorToTelegram(error, 'GET /api/orders');
     return NextResponse.json({ error: 'Server error', details: error.message }, { status: 500 });
   }
 }
 
 export async function POST(request) {
+  if (!process.env.AIRTABLE_PAT || !process.env.AIRTABLE_BASE_ID) {
+    return NextResponse.json({ error: 'Backend Configuration Missing', code: 'CONFIG_ERROR' }, { status: 503 });
+  }
   try {
     const ip = request.headers.get('x-forwarded-for') || '127.0.0.1';
     if (!checkRateLimit(ip)) {
@@ -150,6 +158,7 @@ export async function POST(request) {
     
     return NextResponse.json({ ...newOrderFields, id: created.id, _recordId: created.id });
   } catch (error) {
+    await logErrorToTelegram(error, 'POST /api/orders');
     return NextResponse.json({ error: 'Failed to create order', details: error.message }, { status: 500 });
   }
 }
@@ -211,6 +220,7 @@ export async function PATCH(request) {
 
     return NextResponse.json({ success: true, record: updated });
   } catch (error) {
+    await logErrorToTelegram(error, 'PATCH /api/orders');
     console.error('Update order error:', error);
     return NextResponse.json({ error: error.message || 'Failed to update order' }, { status: 500 });
   }

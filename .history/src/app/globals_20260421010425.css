@@ -1,0 +1,211 @@
+@import "tailwindcss";
+
+@theme {
+  --font-fugaz: var(--font-fugaz-one);
+  --font-baloo: var(--font-baloo-2);
+  --color-primary: #7549fb;
+
+  /* Theme Tokens */
+  --color-body: #f8fafc;
+  --color-text: #0f172a;
+  --color-card: #ffffff;
+  --color-muted: #64748b;
+  --color-border: #ddd;
+}
+
+.dark {
+  --color-body: #0f0a20;
+  --color-text: #f1f1f1;
+  --color-card: #15102a;
+  --color-muted: #8882a8;
+  --color-border: #271f4e;
+}
+
+::-webkit-scrollbar {
+  display: none;
+}
+
+html, body {
+  scroll-behavior: smooth;
+}
+
+body {
+  color: var(--color-text);
+  overflow-x: hidden;
+  background: var(--color-body);
+  font-family: var(--font-baloo), sans-serif;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+:is(h1, h2, h3, h4, .font-heading) {
+  font-family: var(--font-fugaz), cursive;
+}
+
+.grid-products {
+  grid-template-columns: repeat(auto-fit, minmax(200px, auto));
+}
+
+@layer base {
+  button {
+    cursor: pointer;
+  }
+}
+
+/* Base utility overrides for dark mode */
+.bg-white {
+  background-color: var(--color-card);
+}
+
+.bg-gray-50,
+.bg-gray-100 {
+  background-color: var(--color-body);
+}
+
+.border-gray-100,
+.border-gray-200 {
+  border-color: var(--color-border);
+}
+
+.text-gray-600,
+.text-gray-500,
+.text-black\/70 {
+  color: var(--color-muted);
+}
+
+.text-gray-700,
+.text-gray-800,
+.text-gray-900 {
+  color: var(--color-text);
+}
+
+
+/* Force dark mode background for whole app */
+.dark body {
+  background-color: var(--color-body) !important;
+}
+
+.dark .bg-white {
+  background-color: var(--color-card) !important;
+}
+
+.dark .bg-gray-50,
+.dark .bg-gray-100 {
+  background-color: var(--color-body) !important;
+}
+
+.dark .text-gray-900,
+.dark .text-gray-800 {
+  color: #f1f1f1 !important;
+}
+
+.dark .text-gray-700 {
+  color: #e2e8f0 !important;
+}
+
+.dark .text-gray-600 {
+  color: #a0aec0 !important;
+}
+
+.dark .text-gray-500,
+.dark .text-gray-400 {
+  color: #718096 !important;
+}
+
+.dark .border-gray-100,
+.dark .border-gray-200,
+.dark .border-white {
+  border-color: var(--color-border) !important;
+}
+
+.dark .shadow-sm,
+.dark .shadow-md {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -1px rgba(0, 0, 0, 0.25) !important;
+}
+
+/* Specific card backgrounds inside dark sections */
+.dark .bg-gray-100\/30,
+.dark .bg-gray-100\/50,
+.dark .bg-gray-100\/20,
+.dark .bg-gray-100\/10,
+.dark .bg-gray-50\/50,
+.dark .bg-gray-50\/30 {
+  background-color: #1a1535 !important;
+}
+/* -------------------------------------------------------------------------- */
+/*                          PREMIUM ANIMATION SYSTEM                          */
+/* -------------------------------------------------------------------------- */
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+    filter: blur(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-30px);
+    filter: blur(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+
+@keyframes zoomIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+    filter: blur(5px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+    filter: blur(0);
+  }
+}
+
+/* Base reveal class */
+.reveal {
+  animation-duration: 0.8s;
+  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  animation-fill-mode: forwards;
+  opacity: 0;
+}
+
+/* Specific animations */
+.fade-up { animation-name: fadeInUp; }
+.fade-down { animation-name: fadeInDown; }
+.zoom-in { animation-name: zoomIn; }
+
+/* Modern Scroll Trigger (No JS required) */
+@supports (animation-timeline: view()) {
+  .reveal {
+    animation-timeline: view();
+    animation-range: 100px 10% cover 30%;
+  }
+}
+
+/* Fallback for older browsers or simple entrance */
+@media (prefers-reduced-motion: no-preference) {
+  .animate-on-load {
+    opacity: 0;
+    animation: fadeInUp 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+}
+
+/* Staggered delays for children */
+.stagger-1 { animation-delay: 0.1s; }
+.stagger-2 { animation-delay: 0.2s; }
+.stagger-3 { animation-delay: 0.3s; }
+.stagger-4 { animation-delay: 0.4s; }
+.stagger-5 { animation-delay: 0.5s; }

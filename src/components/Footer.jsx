@@ -26,9 +26,6 @@ export const Footer = () => {
             <Link href="/about" className="hover:text-primary transition">
               About
             </Link>
-            <Link href="/contact" className="hover:text-primary transition">
-              Contact
-            </Link>
           </div>
 
           {/* CTA */}
