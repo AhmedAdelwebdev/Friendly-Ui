@@ -20,21 +20,31 @@ export const NotificationProvider = ({ children }) => {
 
   const reportError = useCallback(async (error, context = 'General') => {
     const errorMsg = typeof error === 'string' ? error : (error?.message || 'Unknown Error');
-    const storageKey = `error_log_${context}_${errorMsg.replace(/\s+/g, '_')}`;
-    
-    // Prevent spam using localStorage (sustains between refreshes)
     const now = Date.now();
-    const lastReported = localStorage.getItem(storageKey);
-    const TWENTY_MINUTES = 20 * 60 * 1000;
-
-    if (lastReported && (now - parseInt(lastReported) < TWENTY_MINUTES)) {
-      console.log(`[Throttled] Error already reported in last 20m: ${errorMsg}`);
-      return;
-    }
+    const REFRACTORY_PERIOD = 20 * 60 * 1000; // 20 minutes in milliseconds
     
-    localStorage.setItem(storageKey, now.toString());
+    // 1. Check persistent storage (localStorage) to prevent spam across refreshes
+    try {
+      const storageKey = `last_reported_${errorMsg.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 50)}`;
+      const lastSent = localStorage.getItem(storageKey);
+      
+      if (lastSent && (now - parseInt(lastSent) < REFRACTORY_PERIOD)) {
+        console.log(`[Notification] Suppression active for: ${errorMsg}. Next report allowed in ${Math.round((REFRACTORY_PERIOD - (now - parseInt(lastSent))) / 60000)}m`);
+        return;
+      }
+      
+      localStorage.setItem(storageKey, now.toString());
+    } catch (e) {
+      // Fallback for private browsing where localStorage might fail
+      const lastReported = reportedLogs.current.get(errorMsg);
+      if (lastReported && (now - lastReported < REFRACTORY_PERIOD)) return;
+      reportedLogs.current.set(errorMsg, now);
+    }
 
-    // Silent report to Telegram
+    // 2. Show toast (always show the toast so user knows something is wrong locally)
+    showNotification(errorMsg, 'error');
+
+    // 3. Silent report to Telegram
     try {
       fetch('/api/log-error', {
         method: 'POST',
@@ -48,7 +58,7 @@ export const NotificationProvider = ({ children }) => {
     } catch (e) {
       console.error('Logging failed', e);
     }
-  }, []);
+  }, [showNotification]);
 
   const hideNotification = useCallback(() => {
     setNotification(null);

@@ -49,7 +49,24 @@ export const DataProvider = ({ children }) => {
   }, []);
 
   useEffect(() => {
-    // Initial fetch in background (silent)
+    // 1. Initial health & configuration check
+    const checkHealth = async () => {
+      try {
+        const res = await fetch('/api/health');
+        const data = await res.json();
+        
+        if (!res.ok || data.status !== 'healthy') {
+          const errorMsg = `Configuration Error (${res.status}): ${data.missing?.join(', ')}`;
+          reportError(errorMsg, 'Health Check');
+        }
+      } catch (err) {
+        reportError(`Critical: Health check failed (${err.message})`, 'Startup Check');
+      }
+    };
+
+    checkHealth();
+
+    // 2. Initial fetch in background (silent)
     loadData(true);
 
     // Refresh on network recovery
@@ -61,7 +78,7 @@ export const DataProvider = ({ children }) => {
     return () => {
       window.removeEventListener('online', handleOnline);
     };
-  }, [loadData]);
+  }, [loadData, reportError]);
 
   return (
     <DataContext.Provider value={{ items, loading, error, isBackendDown, refresh: () => loadData(false) }}>
