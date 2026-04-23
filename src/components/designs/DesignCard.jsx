@@ -8,11 +8,13 @@ export const DesignCard = ({ item, index, related }) => {
   const isProduct = item.type === 'Product';
 
   return (
-    <div className={`group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md flex flex-col h-full border border-gray-100`}>
+    <div 
+      className={`group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md flex flex-col h-full border border-gray-100 reveal animate-up`}
+      style={{ '--d': `${(index % 5) * 100}ms` }}
+    >
       <Link href={`/designs/${item.id}`} className="aspect-square relative bg-white overflow-hidden block">
 
-        <Image
-          src={item.image || DEFAULT_IMAGE} alt={item.title} width={100} height={100} unoptimized
+        <Image src={item.image || DEFAULT_IMAGE} alt={item.title} width={400} height={400} priority
           className="size-full object-cover group-hover:scale-105 transition-transform duration-500"
           onError={(e) => { e.target.src = DEFAULT_IMAGE }}
         />

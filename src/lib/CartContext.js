@@ -86,7 +86,7 @@ export const OrdersProvider = ({ children }) => {
       if (hasChanges) {
         setOrders(updatedOrders);
         setNotification({
-          message: "Your order has been approved",
+          message: "Order Approved! | تم الموافقة على طلبك بنجاح!",
           type: 'success'
         });
       }

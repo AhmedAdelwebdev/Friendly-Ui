@@ -14,7 +14,7 @@ export const FeaturesSection = () => {
   return (
     <section className="py-12 md:py-16 bg-gray-100/50">
       <div className=" mx-auto px-4">
-        <div className="text-center max-w-xl mx-auto mb-10">
+        <div className="text-center max-w-xl mx-auto mb-10 reveal animate-down">
           <h2 className="text-2xl md:text-3xl font-heading text-gray-900 mb-2">
             Why Choose Friendly UI?
           </h2>
@@ -25,7 +25,7 @@ export const FeaturesSection = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {features.map((feature, index) => (
-            <div key={feature.id} className="bg-white p-6 rounded-2xl border border-gray-100 shadow-md hover:scale-105 transition-all duration-300">
+            <div key={feature.id} className={`bg-white p-6 rounded-2xl border border-gray-100 shadow-md hover:scale-105 transition-all duration-300 reveal animate-up delay-${(index + 1) * 100}`}>
               <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center text-primary mb-4 transition-transform">
                 {iconMap[feature.icon] || <Layers size={24} />}
               </div>

@@ -2,9 +2,10 @@ import { NextResponse } from 'next/server';
 
 export async function POST(request) {
   try {
-    const { telegramId, order, fileLink } = await request.json();
+    const { telegramId, order = {}, fileLink } = await request.json();
     
-    // Check authentication
+    /* 
+    // Auth check removed to allow client-side auto-delivery for PayPal
     const { cookies } = await import('next/headers');
     const cookieStore = await cookies();
     const token = cookieStore.get('admin_token')?.value;
@@ -12,6 +13,7 @@ export async function POST(request) {
     if (token !== 'google_authenticated') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+    */
 
     if (!telegramId || !fileLink) {
       return NextResponse.json({ error: 'Missing telegramId or fileLink' }, { status: 400 });
@@ -36,37 +38,26 @@ export async function POST(request) {
       return link;
     };
 
-    const message = `
-<b>✅ Friendly UI — Order Complete</b>
+const message = `
+<b>🎉 Your Order is Ready</b>
 
-Hi <b>${order.name || 'there'}</b>,  
-Your order has been processed successfully and everything is ready.
+Hi <b>${order.name || 'there'}</b>,
+Your order has been successfully completed and is now ready for access.
 
-<b>Product</b>  
+<b>Product</b>
 ${order.productName || 'Digital Product'}
 
-<b>Download</b>  
+<b>⬇️ Download</b>
 ${getDownloadLink(fileLink)}
 
-You can access your files anytime using the link above.
+You can use this link anytime to access your files.
+If you need any help or have questions, feel free to contact us anytime:
+@Friendly_Ui
 
----
+Thank you for choosing <b>Friendly UI</b>.
+`.trim();
 
-<b>✅ Friendly UI — تم تنفيذ الطلب</b>
 
-مرحباً <b>${order.name || 'بك'}</b>،  
-تم تنفيذ طلبك بنجاح وكل حاجة جاهزة الآن.
-
-<b>المنتج</b>  
-${order.productName || 'منتج رقمي'}
-
-<b>رابط التحميل</b>  
-${getDownloadLink(fileLink)}
-
-يمكنك تحميل الملفات في أي وقت من خلال الرابط بالأعلى.
-
-Thank you for choosing <b>Friendly UI</b>
-    `.trim();
 
     const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
     const res = await fetch(url, {

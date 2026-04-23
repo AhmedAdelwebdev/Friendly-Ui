@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { useState, useEffect, useRef } from 'react';
 import { usePayment } from '@/lib/PaymentContext';
 import { useOrders } from '@/lib/CartContext';
+import { useNotification } from '@/lib/NotificationContext';
 import { X, CheckCircle, Upload, ChevronRight, Copy, Check, ArrowRight, MessageSquare, Globe } from 'lucide-react';
 import { PayPalButtons } from "@paypal/react-paypal-js";
 import Link from 'next/link';
@@ -33,6 +34,7 @@ export const PaymentModal = () => {
   const { activeItem, isPaymentOpen, closePayment } = usePayment();
   const { addOrder, setIsOrdersOpen } = useOrders();
   const { isBackendDown } = useData();
+  const { showNotification } = useNotification();
 
   // 0: Telegram Auth, 1: Info, 2: Method, 3: Process/Success
   const [step, setStep] = useState(0);
@@ -49,8 +51,7 @@ export const PaymentModal = () => {
   const [showWhatsApp, setShowWhatsApp] = useState(false);
   const [analyzingOCR, setAnalyzingOCR] = useState(false);
   const [lang, setLang] = useState('EN');
-  const [copiedType, setCopiedType] = useState(null); // 'start' or 'command'
-
+  const [copiedType, setCopiedType] = useState(null); 
   const pollIntervalRef = useRef(null);
 
   // Basic URL replacement if missing
@@ -63,23 +64,23 @@ export const PaymentModal = () => {
       document.body.style.paddingRight = `${scrollBarWidth}px`;
 
       // Load saved user info
-      const savedInfo = localStorage.getItem('friendly_userInfo');
+      const savedInfo = localStorage.getItem('friendly_user_info');
       if (savedInfo) {
         try { setUserInfo(JSON.parse(savedInfo)); } catch (e) { }
       }
 
       // Check Telegram Auth Step
-      const savedTgId = localStorage.getItem('friendly_telegram_chat_id');
+      const savedTgId = localStorage.getItem('friendly_chat_id');
       if (savedTgId) {
         setTelegramId(savedTgId);
         setTelegramCode(savedTgId); // Use ID as code for re-linking if needed
         setStep(1); // skip to info
       } else {
         // Try to get existing code from localStorage to survive refreshes
-        let code = localStorage.getItem('friendly_telegram_auth_code');
+        let code = localStorage.getItem('friendly_auth_code');
         if (!code) {
-          code = 'AUTH_' + Math.random().toString(36).substring(2, 8).toUpperCase();
-          localStorage.setItem('friendly_telegram_auth_code', code);
+          code = Math.floor(100000 + Math.random() * 900000); 
+          localStorage.setItem('friendly_auth_code', code);
         }
         setTelegramCode(code);
         setStep(0);
@@ -105,19 +106,23 @@ export const PaymentModal = () => {
           const res = await fetch(`/api/telegram/auth?code=${telegramCode}`);
           const data = await res.json();
           if (data.status === 'success' && data.chatId) {
-            clearInterval(pollIntervalRef.current);
-            localStorage.setItem('friendly_telegram_chat_id', data.chatId.toString());
-            localStorage.removeItem('friendly_telegram_auth_code'); // Clean up code
-            setTelegramId(data.chatId.toString());
-            if (data.firstName) {
-              setUserInfo(prev => ({ ...prev, name: prev.name || data.firstName }));
+              clearInterval(pollIntervalRef.current);
+              localStorage.setItem('friendly_chat_id', data.chatId.toString());
+              localStorage.removeItem('friendly_auth_code'); // Clean up code
+              setTelegramId(data.chatId.toString());
+              if (data.firstName || data.username) {
+                setUserInfo(prev => ({ ...prev,
+                  name: prev.name || data.firstName || '',
+                  contact: prev.contact || (data.username ? `@${data.username}` : '')
+                }));
+              }
+              showNotification(txIsAr('Telegram Account Linked', 'تم ربط حساب تليجرام بنجاح'), 'success', 'stop');
+              setTimeout(() => setStep(1), 1000); // go to step 1 after brief success
             }
-            setTimeout(() => setStep(1), 1000); // go to step 1 after brief success
+          } catch (e) { 
+            console.error('Polling fail', e);
           }
-        } catch (e) {
-          console.error('Polling fail', e);
-        }
-      }, 3000);
+      }, 5000); 
     }
 
     return () => {
@@ -135,12 +140,12 @@ export const PaymentModal = () => {
     setStatus('idle');
     setScreenshot(null);
     setError('');
-    const hasTg = localStorage.getItem('friendly_telegram_chat_id');
+    const hasTg = localStorage.getItem('friendly_chat_id');
     setStep(hasTg ? 1 : 0);
   };
 
   const handleNextStep = () => {
-    localStorage.setItem('friendly_userInfo', JSON.stringify(userInfo));
+    localStorage.setItem('friendly_user_info', JSON.stringify(userInfo));
     setStep(2);
   };
 
@@ -151,7 +156,9 @@ export const PaymentModal = () => {
 
   // Helper for text direction
   const isAr = lang === 'AR';
+  const dir = isAr ? 'rtl' : 'ltr';
   const txIsAr = (en, ar) => isAr ? ar : en;
+
 
   const handleCopy = (text, type) => {
     navigator.clipboard.writeText(text);
@@ -166,7 +173,9 @@ export const PaymentModal = () => {
       const method = data.method || paymentMethod;
       const isAttempt = data.status?.includes('Attempting');
 
-      const message = (isAttempt ? `⭐ <b>Payment Attempt</b>` : `😎 <b>New Order Received</b>`) +
+      const message = (isAttempt ? 
+        `⭐ <b>Payment Attempt</b>` : 
+        `😎 <b>New Order Received</b>`) +
         `\n\nCustomer` +
         `\n• Name: ${escapeHTML(userInfo.name)}` +
         `\n• ${userInfo.contact}` +
@@ -176,7 +185,7 @@ export const PaymentModal = () => {
         `\n• Method: ${method?.toUpperCase()}` + (!isAttempt ?
         `\n• Order ID: <code>${orderId}</code>` : '');
 
-      const formData = new FormData();
+      const formData = new FormData(); 
       formData.append('message', message);
       if (screenshot) formData.append('photo', screenshot);
 
@@ -190,14 +199,18 @@ export const PaymentModal = () => {
   };
 
   const startPaymentAttempt = (method) => {
-    setPaymentMethod(method);
-    setStep(3);
-    sendTelegramNotification({
-      status: `Attempting Payment`,
-      method: method,
-      orderId: 'ATT-' + Math.random().toString(36).substring(2, 7).toUpperCase()
-    });
-  };
+  setPaymentMethod(method);
+  setStep(3);
+
+  const timestamp = Date.now().toString().slice(-4); 
+  const randomNum = Math.floor(100 + Math.random() * 99999); 
+
+  sendTelegramNotification({
+    status: `Attempting Payment`,
+    method: method,
+    orderId: `ATT-${timestamp}${randomNum}`
+  });
+};
 
   const preprocessImage = (file) => {
     return new Promise((resolve) => {
@@ -278,12 +291,12 @@ export const PaymentModal = () => {
 
       const isValid = priceMatch && (phoneMatch || hasPayKeyword || isVodafoneUSSD);
 
-      console.group('Ultra-OCR Debugging');
-      console.log('Detected Text:', fullText);
-      console.log('Normalized:', normalizedText);
-      console.log('Price Match:', priceMatch);
-      console.log('Phone Match:', phoneMatch);
-      console.groupEnd();
+      // console.group('Ultra-OCR Debugging');
+      // console.log('Detected Text:', fullText);
+      // console.log('Normalized:', normalizedText);
+      // console.log('Price Match:', priceMatch);
+      // console.log('Phone Match:', phoneMatch);
+      // console.groupEnd();
 
       return { isValid, detectedAmount: priceMatch ? priceEGP : 0 };
     } catch (err) {
@@ -308,14 +321,17 @@ export const PaymentModal = () => {
       const newFails = failedAttempts + 1;
       setFailedAttempts(newFails);
 
-      setError(txIsAr(
-        newFails >= 3
-          ? 'Verification failed multiple times. Please send your receipt via Telegram for manual approval.'
-          : `Invalid Receipt: Could not detect a valid ${priceEGP} EGP transfer. Please try re-uploading or use a different screenshot.`,
-        newFails >= 3
-          ? 'فشل التحقق عدة مرات. يرجى إرسال الإيصال عبر تليجرام للمراجعة اليدوية.'
-          : `إيصال غير صالح: لم يتم اكتشاف تحويل بقيمة ${priceEGP} جنيه. يرجى إعادة رفع الصورة أو تجربة لقطة شاشة أخرى.`
-      ));
+      const errorMessageEn = `Invalid Receipt: Could not detect a valid ${priceEGP} EGP transfer.`;
+      const errorMessageAr = `إيصال غير صالح: لم يتم اكتشاف تحويل بقيمة ${priceEGP} جنيه.`;
+      
+      const manualMsgEn = 'Verification failed. Please send your receipt via Telegram for manual approval.';
+      const manualMsgAr = 'فشل التحقق. يرجى إرسال الإيصال عبر تليجرام للمراجعة اليدوية.';
+
+      const finalMsgEn = newFails >= 3 ? manualMsgEn : errorMessageEn;
+      const finalMsgAr = newFails >= 3 ? manualMsgAr : errorMessageAr;
+
+      setError({ en: finalMsgEn, ar: finalMsgAr });
+      showNotification(`${finalMsgEn} | ${finalMsgAr}`, 'error', 'stop');
       if (newFails >= 3) setShowWhatsApp(true);
       return;
     }
@@ -324,7 +340,10 @@ export const PaymentModal = () => {
 
   const handleVodafoneSubmit = async () => {
     if (!screenshot) {
-      setError(txIsAr('Please upload a screenshot of the payment.', 'يرجى إرفاق صورة الدفع'));
+      setError({ 
+        en: 'Please upload a screenshot of the payment.', 
+        ar: 'يرجى إرفاق صورة الدفع' 
+      });
       return;
     }
     setError('');
@@ -337,14 +356,17 @@ export const PaymentModal = () => {
       const newFails = failedAttempts + 1;
       setFailedAttempts(newFails);
 
-      setError(txIsAr(
-        newFails >= 3
-          ? 'Verification failed multiple times. Please use Telegram to complete your order.'
-          : `Invalid screenshot (${newFails}/3). Please re-upload or try another one.`,
-        newFails >= 3
-          ? 'فشل التحقق عدة مرات. يرجى استخدام تليجرام لإكمال طلبك.'
-          : `إيصال غير صالح (${newFails}/3). يرجى إعادة الرفع أو تجربة إيصال آخر.`
-      ));
+      const errorMessageEn = `Invalid screenshot (${newFails}/3). Please re-upload or try another one.`;
+      const errorMessageAr = `إيصال غير صالح (${newFails}/3). يرجى إعادة الرفع أو تجربة إيصال آخر.`;
+      
+      const manualMsgEn = 'Verification failed multiple times. Please use Telegram to complete your order.';
+      const manualMsgAr = 'فشل التحقق عدة مرات. يرجى استخدام تليجرام لإكمال طلبك.';
+
+      const finalMsgEn = newFails >= 3 ? manualMsgEn : errorMessageEn;
+      const finalMsgAr = newFails >= 3 ? manualMsgAr : errorMessageAr;
+
+      setError({ en: finalMsgEn, ar: finalMsgAr });
+      showNotification(`${finalMsgEn} | ${finalMsgAr}`, 'error', 'stop');
       if (newFails >= 3) setShowWhatsApp(true);
       return;
     }
@@ -368,31 +390,52 @@ export const PaymentModal = () => {
           productImage: activeItem.image
         })
       });
+
+      if (!resp.ok) {
+        const errorData = await resp.json();
+        throw new Error(errorData.details || errorData.error || 'Failed to create order');
+      }
+
       const data = await resp.json();
       const finalId = data._recordId || data.id || orderId;
 
       // Notify Admin
-      sendTelegramNotification({
+      await sendTelegramNotification({
         status: 'Awaiting Verification',
         orderId: finalId
       });
 
       // Notify Customer (Pending Message)
-      fetch('/api/telegram/received', {
+      const currentTgId = telegramId || localStorage.getItem('friendly_chat_id');
+      
+      const notifyResp = await fetch('/api/telegram/received', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          telegramId,
+          telegramId: currentTgId,
           name: userInfo.name,
           contact: userInfo.contact,
           productName: activeItem.title
         })
-      }).catch(e => console.error('Customer notification failed:', e));
+      });
+
+      if (!notifyResp.ok) {
+        showNotification(txIsAr('Order created, but failed to send Telegram message.', 'تم إنشاء الطلب، لكن فشل إرسال رسالة تليجرام.'), 'error');
+      } else {
+        showNotification(txIsAr('Request sent successfully!', 'تم إرسال الطلب بنجاح!'), 'success');
+      }
 
       setStatus('success');
       addOrder(activeItem, { id: finalId, status: 'pending' });
     } catch (err) {
-      setError(`Failed: ${err.message}`);
+      console.error('Order submission error:', err);
+      // User-friendly error message
+      const friendlyEn = "Something went wrong while processing your order. Please try again or contact support.";
+      const friendlyAr = "حدث خطأ أثناء معالجة طلبك. يرجى المحاولة مرة أخرى أو التواصل مع الدعم.";
+      
+      const errMsg = txIsAr(friendlyEn, friendlyAr);
+      setError({ en: friendlyEn, ar: friendlyAr });
+      showNotification(errMsg, 'error', 'stop');
       setStatus('idle');
     }
   };
@@ -415,11 +458,15 @@ export const PaymentModal = () => {
           priceUSD: Number(activeItem.price),
           priceEGP: Number(priceEGP),
           paymentMethod: 'paypal',
-          productImage: activeItem.image,
+          image: activeItem.image,
           status: 'Completed',
           confirmedDate: new Date().toISOString()
         })
       });
+
+      if (!resp.ok) {
+        throw new Error('Server error');
+      }
 
       const data = await resp.json();
       const finalId = data._recordId || data.id || orderId;
@@ -436,26 +483,34 @@ export const PaymentModal = () => {
       });
 
       // Auto-deliver via Telegram for PayPal
-      await fetch('/api/delivery', {
+      const currentTgId = telegramId || localStorage.getItem('friendly_chat_id');
+      
+      const deliverResp = await fetch('/api/delivery', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          telegramId,
+          telegramId: currentTgId,
           order: { name: userInfo.name, productName: activeItem.title, contact: userInfo.contact },
           fileLink: activeItem.fileLink
         })
       });
 
+      if (!deliverResp.ok) {
+        showNotification(txIsAr('Payment successful, but delivery message failed. Contact support.', 'تم الدفع بنجاح، لكن فشل إرسال الملفات. تواصل مع الدعم.'), 'error', 'stop');
+      } else {
+        showNotification(txIsAr('Payment successful! Files sent to Telegram.', 'تم الدفع بنجاح! تم إرسال الملفات إلى تليجرام.'), 'success');
+      }
+
     } catch (err) {
       console.error("Failed to post paypal order details");
+      showNotification(txIsAr('Failed to process order', 'فشل في معالجة الطلب'), 'error', 'stop');
     }
   };
 
   return (
-    <div className="fixed inset-0 z-[200] grid place-items-center overflow-y-auto max-h-screen bg-black/70 backdrop-blur-md p-4 sm:p-8 font-sans">
-      <div className="absolute inset-0" />
+    <div className={`fixed inset-0 z-[200] grid place-items-center overflow-y-auto max-h-screen bg-black/70 backdrop-blur-md p-4 ${isAr && 'font-tajawal'}`}>
 
-      <div className="bg-body max-w-lg sm:max-w-3xl overflow-y-auto max-h-screen relative w-full h-full sm:h-fit mx-auto rounded-xl sm:rounded-[2.5rem] shadow-2xl flex flex-col sm:flex-row overflow-hidden animate-in zoom-in-95 duration-300">
+      <div className="bg-body max-w-lg sm:max-w-3xl overflow-y-auto max-h-screen relative w-full h-full  mx-auto rounded-3xl shadow-2xl flex flex-col sm:flex-row overflow-hidden animate-in zoom-in-95 duration-300">
 
         <div className="flex-1 p-6 lg:p-10 relative flex flex-col w-full">
           <div className="flex items-center justify-between gap-4 mb-8">
@@ -467,14 +522,14 @@ export const PaymentModal = () => {
 
             <div className="flex items-center gap-2">
               <button onClick={() => setLang(l => l === 'EN' ? 'AR' : 'EN')}
-                className="w-10 py-1.5 bg-gray-100 text-base sm:text-xs text-gray-700 flex items-center gap-1.5 font-bold uppercase tracking-wider"
+                className="w-16 py-1.5 text-primary text-base flex items-center justify-center gap-1.5 font-bold uppercase tracking-wider"
               >
-                <Globe size={14} className="shrink-0" /> {lang}
+                <Globe size={16} className="shrink-0" /> {lang}
               </button>
 
               <button
                 onClick={handleClose}
-                className="p-1.5 bg-gray-100 hover:bg-red-50 hover:text-red-500 rounded-full transition-all border border-black/5 text-gray-500"
+                className="p-1.5 hover:bg-red-50 hover:text-red-500 rounded-full transition-all border border-black/5 text-gray-500"
               >
                 <X size={18} />
               </button>
@@ -487,9 +542,9 @@ export const PaymentModal = () => {
             )}
 
             {status === 'processing' && (
-              <LoadingOverlay type="upload" message={txIsAr('Almost There', 'لحظات من فضلك')} />
+              <LoadingOverlay type="upload" message={txIsAr('Processing', 'جاري التنفيذ')} />
             )}
-
+ 
             {status === 'success' ? (
               <div className="h-full flex flex-col items-center justify-center text-center animate-in zoom-in-95 duration-500 p-2">
                 <div className="text-green-500 mb-6">
@@ -497,7 +552,7 @@ export const PaymentModal = () => {
                 </div>
                 <h2 className="text-2xl text-gray-900 mb-2">{txIsAr('Request Sent', 'تم إرسال الطلب')}</h2>
                 <p className="text-gray-500 mb-8 max-w-sm text-sm leading-relaxed">
-                  {txIsAr('Excellent work! Check your Telegram shortly for the files.', 'ممتاز! تم استلام طلبك. يرجى مراجعة تليجرام الخاص بك.')}
+                  {txIsAr('Excellent work  Check your Telegram shortly for the files.', 'ممتاز  تم استلام طلبك. يرجى مراجعة تليجرام الخاص بك.')}
                 </p>
                 <div className="w-full max-w-xs space-y-2.5">
                   <button onClick={() => { handleClose(); setTimeout(() => setIsOrdersOpen(true), 300); }} className="w-full bg-primary text-white py-4 rounded-xl hover:bg-primary-dark transition-all shadow-lg">
@@ -511,15 +566,15 @@ export const PaymentModal = () => {
                   <div className="animate-in fade-in slide-in-from-right-10 duration-500 flex flex-col items-center justify-center text-center py-2">
                     <div className="bg-primary/5 p-4 rounded-2xl border border-primary/10 mb-6 text-primary">
                       <p className="text-sm font-medium">
-                        {txIsAr('Follow these 3 steps to link your account:', 'اتبع هذه الخطوات الثلاث لربط حسابك:')}
+                        {txIsAr('Follow these 3 steps to link your account', 'اتبع هذه الخطوات الثلاث لربط حسابك')}
                       </p>
                     </div>
 
-                    <div className="w-full max-w-sm space-y-6 mb-8 text-right" dir={isAr ? 'rtl' : 'ltr'}>
+                    <div className="w-full max-w-lg space-y-6 mb-8 text-start" dir={dir}>
                       <div className="flex gap-4">
                         <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center font-bold text-sm">1</div>
                         <p className="text-sm text-gray-600 leading-relaxed pt-1">
-                          {txIsAr('Click the "Connect Telegram" button below to open the website, not app.', 'اضغط على زر "ربط حساب تليجرام" أدناه ليفتح لك الموقع , وليس التطبيق.')}
+                          {txIsAr('Click the "Connect Telegram" button below to open telegram app.', 'اضغط على زر "ربط حساب تليجرام" أدناه ليفتح لك تطبيق تليجرام')}
                         </p>
                       </div>
 
@@ -561,7 +616,7 @@ export const PaymentModal = () => {
                     ) : (
                       <Link href={`https://t.me/${BOT_USERNAME}?start=${telegramCode}`}
                         target="_blank" rel="noopener noreferrer"
-                        className="w-full max-w-sm flex items-center justify-center gap-2 bg-[#0088cc] text-white py-4 px-6 rounded-2xl shadow-lg shadow-[#0088cc]/20 hover:bg-[#0077b3] transition-all hover:scale-[1.02] active:scale-[0.98]"
+                        className="w-full max-w-sm flex items-center justify-center gap-2 bg-primary text-white py-4 px-6 rounded-2xl shadow-lg transition-all hover:scale-105 active:scale-95"
                       >
                         <MessageSquare size={18} />
                         {txIsAr('Connect Telegram Account', 'ربط حساب تليجرام')} <ArrowRight size={18} className={isAr ? 'rotate-180' : ''} />
@@ -572,7 +627,9 @@ export const PaymentModal = () => {
 
                 {step === 1 && (
                   <div className="animate-in fade-in slide-in-from-right-10 duration-500">
-                    <h3 className="text-xl text-gray-900 mb-5">{txIsAr('Personalize Order', 'تخصيص الطلب')}</h3>
+                    <h3 className="text-xl text-gray-900 mb-5" dir={dir}>
+                      {txIsAr('Personalize Order', 'تخصيص الطلب')}
+                    </h3>
                     <div className="space-y-4">
                       <div className="flex flex-col sm:flex-row gap-4 *:grow *:space-y-2.5">
                         <div>
@@ -685,7 +742,11 @@ export const PaymentModal = () => {
                         style={{ layout: "vertical", shape: "pill", label: 'pay' }}
                         createOrder={(d, actions) => actions.order.create({ purchase_units: [{ amount: { currency_code: "USD", value: Number(priceUSD) } }] })}
                         onApprove={(d, actions) => actions.order.capture().then(handlePayPalSuccess)}
-                        onError={() => setError('Gateway timeout.')}
+                        onError={() => {
+                          const msg = txIsAr('Payment Gateway Error', 'خطأ في بوابة الدفع');
+                          setError(msg);
+                          showNotification(msg, 'error', 'stop');
+                        }}
                       />
                     </div>
                     <button onClick={() => setStep(2)} className="w-full text-xs text-gray-600 text-center hover:text-gray-900">{txIsAr('Choose another method', 'اختر طريقة أخرى')}</button>
@@ -700,22 +761,22 @@ export const PaymentModal = () => {
 
                       {/* Amount */}
                       <div className="bg-gray-50 border border-gray-100 rounded-xl p-3">
-                        <p className="text-sm text-gray-600 capitalize mb-1">
+                        <p className="text-base text-gray-600 capitalize mb-1">
                           {txIsAr('Amount to Transfer', 'المبلغ المطلوب تحويله')}
                         </p>
-                        <h3 className="text-xl font-medium text-primary">
+                        <h3 className="text-xl text-primary">
                           {priceEGP} <span className="text-xs">EGP</span>
                         </h3>
                       </div>
 
                       {/* Number */}
                       <div className="bg-gray-50 border border-gray-100 rounded-xl p-3 flex flex-col justify-between">
-                        <p className="text-sm text-gray-600 capitalize">
+                        <p className="text-base text-gray-600 capitalize">
                           {txIsAr('Target Number', 'الرقم المحول إليه')}
                         </p>
 
                         <div className="flex items-center justify-between mt-1">
-                          <span className="text-sm tracking-wider" style={{ direction: 'ltr' }}>
+                          <span className="text-base tracking-wider" style={{ direction: 'ltr' }}>
                             01044197802
                           </span>
 
@@ -732,7 +793,7 @@ export const PaymentModal = () => {
 
                     {/* UPLOAD */}
                     <div className="space-y-2">
-                      <label className="text-sm text-gray-600 capitalize">
+                      <label className="text-base text-gray-600 capitalize">
                         {txIsAr('Upload Receipt', 'رفع إيصال الدفع')}
                       </label>
 
@@ -771,8 +832,8 @@ export const PaymentModal = () => {
 
                     {/* ERROR */}
                     {error && (
-                      <div className="text-red-500 text-[11px] text-center">
-                        {error}
+                      <div className="text-red-500 text-sm text-center">
+                        {typeof error === 'object' ? txIsAr(error.en, error.ar) : error}
                       </div>
                     )}
 

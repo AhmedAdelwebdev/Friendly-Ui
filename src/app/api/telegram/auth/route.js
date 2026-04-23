@@ -32,14 +32,20 @@ export async function GET(request) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               chat_id: chatId,
-              text: `✅ Account Linked Successfully!\n\nYou can now return to the website to complete your purchase.`
+              text: 
+              `✅ Account Linked Successfully!\n` + 
+              `You can now return to the website to complete your purchase.` + 
+              `\n----------\n` + 
+              `✅ تم ربط الحساب بنجاح!\n` +
+              `يمكنك الآن العودة إلى الموقع لإكمال عملية الشراء.`
             })
           }).catch(e => console.error("Confirm msg failed:", e));
 
           return NextResponse.json({ 
             status: 'success', 
             chatId: chatId,
-            firstName: msg.from.first_name || 'User'
+            firstName: msg.from.first_name || '',
+            username: msg.from.username || ''
           });
         }
       }

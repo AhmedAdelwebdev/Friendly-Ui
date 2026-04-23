@@ -1,4 +1,4 @@
-import { Fugaz_One, Baloo_2 } from "next/font/google";
+import { Fugaz_One, Baloo_2, Tajawal } from "next/font/google";
 import "./globals.css";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
@@ -20,48 +20,32 @@ const baloo2 = Baloo_2({
   subsets: ["latin"],
 });
 
+const tajawal = Tajawal({
+  weight: ["400", "500", "700"],
+  variable: "--font-tajawal",
+  subsets: ["arabic"],
+});
+
 export const metadata = {
   title: "Friendly UI",
   description:
-    "Friendly UI is a premium creative hub offering modern UI kits, templates, and digital assets for designers and developers. Crafted for speed, elegance, and seamless user experience.",
+    "Friendly UI offers premium website templates, UI kits, and digital assets. Professional designs crafted for speed, elegance, and high conversion. Start building your dream project today.",
   icons: {
     icon: "/favicon.ico",
   },
   keywords: [
-    "Friendly UI",
-    "Friendly UI templates",
-    "Friendly UI ui kits",
-    "Friendly UI digital assets",
-    "Friendly UI templates",
-    "Friendly UI templates",
-    "website templates",
-    "dashboard templates",
-    "react templates",
-    "next.js templates",
-    "tailwind css templates",
-    "admin dashboard ui",
-    "landing page templates",
-    "ui components",
-    "ui kits",
-    "figma ui kits",
-    "web design templates",
-    "premium website templates",
-    "react ui kit",
-    "modern web templates",
-    "frontend templates",
-    "responsive website templates",
-    "digital design assets",
-    "web ui resources",
-    "saas templates",
-    "creative website templates"
+    "Friendly UI", "UI Kits", "Website Templates", "Next.js Templates", "Tailwind CSS", "Premium Design", "Web Design Assets", "Dashboard Templates"
   ],
   authors: [{ name: "Ahmed Adel" }],
   creator: "Ahmed Adel",
   metadataBase: new URL("https://friendlyui.vercel.app"),
+  alternates: {
+    canonical: "/",
+  },
   openGraph: {
     title: "Friendly UI",
     description:
-      "Discover premium UI kits, templates, and creative digital assets built for designers and developers.",
+      "Modern UI kits and website templates for creative developers and designers. Fast, elegant, and professional.",
     url: "https://friendlyui.vercel.app",
     siteName: "Friendly UI",
     images: [
@@ -91,11 +75,36 @@ export default async function RootLayout({ children }) {
   const protocol = h.get("x-forwarded-proto") || "http";
 
   return (
-    <html lang="en" className={`${fugazOne.variable} ${baloo2.variable} h-full antialiased`} suppressHydrationWarning >
+    <html lang="en" className={`${fugazOne.variable} ${baloo2.variable} ${tajawal.variable} h-full antialiased`} suppressHydrationWarning >
       <head>
+        <script type="application/ld+json" dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "WebSite",
+            "name": "Friendly UI",
+            "url": "https://friendlyui.vercel.app",
+            "description": "Premium Digital Assets & UI Kits for designers and developers.",
+            "author": {
+              "@type": "Person",
+              "name": "Ahmed Adel"
+            }
+          })
+        }} />
+        <script dangerouslySetInnerHTML={{
+          __html: `
+            try {
+              const savedTheme = localStorage.getItem('friendly_theme');
+              if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+              } else {
+                document.documentElement.classList.remove('dark');
+              }
+            } catch (_) {}
+          `
+        }} />
       </head>
 
-      <body className="min-h-full w-full max-w-6xl mx-auto flex flex-col font-baloo" suppressHydrationWarning>
+      <body className="min-h-full w-full maxWidth mx-auto flex flex-col font-baloo selection:bg-primary/20" suppressHydrationWarning>
         <ClientProviders>
           {/* <SecurityLock /> */}
           <Header />

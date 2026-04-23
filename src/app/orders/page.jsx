@@ -15,6 +15,7 @@ import {
 import Image from 'next/image';
 import { DEFAULT_IMAGE } from '@/lib/data';
 import { LoadingOverlay } from '@/components/LoadingOverlay';
+import NotificationToast from '@/components/NotificationToast';
 
 const CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '';
 
@@ -29,6 +30,13 @@ export default function OrdersDashboard() {
   const [statusFilter, setStatusFilter] = useState('All');
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [showSearch, setShowSearch] = useState(false);
+  const [notification, setNotification] = useState(null);
+  const [processingOrders, setProcessingOrders] = useState(new Set());
+  const [activeOps, setActiveOps] = useState(0);
+
+  const showNotification = (message, type = 'success', duration = 4000) => {
+    setNotification({ message, type, duration });
+  };
 
   const [countdowns, setCountdowns] = useState({});
   const timersRef = useRef({});
@@ -222,28 +230,15 @@ export default function OrdersDashboard() {
   };
 
   const confirmOrder = async (order) => {
+    const recordId = order._recordId;
     const confirmationTimestamp = new Date().toISOString();
-
-    // Optimistic Update: Change status immediately in UI
-    setOrders(prev => prev.map(o =>
-      o._recordId === order._recordId ? { ...o, status: 'Completed', confirmedDate: confirmationTimestamp, lastLocalUpdate: Date.now() } : o
-    ));
+    
+    // Start individual loading
+    setProcessingOrders(prev => new Set(prev).add(recordId));
+    setActiveOps(prev => prev + 1);
 
     try {
-      const updateRes = await fetch('/api/orders', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          recordId: order._recordId,
-          status: 'Completed',
-          confirmedDate: confirmationTimestamp
-        }),
-      });
-
-      const updateData = await updateRes.json();
-      if (!updateRes.ok) throw new Error(updateData.error || updateData.details || 'Update failed on server.');
-
-      // Background Delivery
+      // 1. Prepare delivery data
       const product = products.find(p => {
         const pTitle = (p.title || '').trim().toLowerCase();
         const oProd = (order.product || '').trim().toLowerCase();
@@ -251,26 +246,70 @@ export default function OrdersDashboard() {
       });
 
       const fileLink = product?.fileLink || '#';
+      const telegramId = order.telegramId || order.telegram_id || order.userEmail || order.contact || order.chatId;
 
-      fetch('/api/delivery', {
+      if (!telegramId || isNaN(Number(telegramId))) {
+        throw new Error('No valid numeric Telegram ID found for this customer. Please check the telegramId/contact field.');
+      }
+
+      // 2. Try Delivery FIRST
+      const deliveryRes = await fetch('/api/delivery', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          telegramId: order.userEmail,
+          telegramId: telegramId,
           order: { name: order.userName, productName: order.product || 'Your Product' },
           fileLink
         }),
-      }).catch(e => console.error('Delivery failed in background:', e));
+      });
 
-      // Final Sync: Ensure local state matches server exactly
+      if (!deliveryRes.ok) {
+        const delErr = await deliveryRes.json();
+        throw new Error(`Telegram Delivery Failed: ${delErr.error || 'Check Bot Token or Chat ID'}`);
+      }
+
+      // 3. Only if delivery succeeds, update Airtable
+      const updateRes = await fetch('/api/orders', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          recordId: recordId,
+          status: 'Completed',
+          confirmedDate: confirmationTimestamp
+        }),
+      });
+
+      const updateData = await updateRes.json();
+      if (!updateRes.ok) {
+        throw new Error(`Telegram Sent, but Database Update Failed: ${updateData.error || updateData.details}`);
+      }
+
+      // 4. Update UI after success
       const updatedRecord = updateData.record || updateData;
       const actualStatus = updatedRecord.fields?.status || updatedRecord.fields?.Status || 'Completed';
+      
       setOrders(prev => prev.map(o =>
-        o._recordId === order._recordId ? { ...o, status: actualStatus } : o
+        o._recordId === recordId ? { ...o, status: actualStatus, confirmedDate: confirmationTimestamp } : o
       ));
 
+      // Handle Success Toast with intelligent timing
+      setActiveOps(prev => {
+        const remaining = prev - 1;
+        // If this was the last one, set 2s timer. If not, 'stop' the timer to keep it visible
+        showNotification('Order delivered successfully!', 'success', remaining > 0 ? 'stop' : 2000);
+        return remaining;
+      });
+
     } catch (err) {
-      alert('حدث خطأ أثناء التأكيد: ' + err.message);
+      console.error('Confirm Order Root Error:', err);
+      showNotification(err.message, 'error', 'stop');
+      setActiveOps(prev => prev - 1);
+    } finally {
+      setProcessingOrders(prev => {
+        const next = new Set(prev);
+        next.delete(recordId);
+        return next;
+      });
     }
   };
 
@@ -338,7 +377,7 @@ export default function OrdersDashboard() {
   const renderActions = (order, isCompleted, isCountdown) => {
     if (isCompleted) {
       return (
-        <div className="flex flex-col items-center gap-1 grow md:grow-0 justify-center p-3 bg-green-500/20 text-green-500 rounded-lg cursor-default">
+        <div className="flex flex-col items-center gap-1 grow md:grow-0 justify-center p-3 bg-green-500/20 text-green-500 rounded-lg cursor-default min-w-[120px]">
           {order.confirmedDate && (
             <span className="text-sm font-medium">
               {new Date(order.confirmedDate).toLocaleString("en-US", {
@@ -353,14 +392,30 @@ export default function OrdersDashboard() {
       );
     }
 
-    if (isCountdown) {
+    const isProcessing = processingOrders.has(order._recordId);
+
+    if (isCountdown || isProcessing) {
       return (
         <button
-          onClick={() => cancelConfirmation(order._recordId)}
-          className="px-4 py-2 bg-red-50 text-red-600 border border-red-100 rounded-lg text-xs hover:bg-red-100 transition-all flex items-center justify-center gap-1.5 w-full md:w-auto"
+          onClick={() => isCountdown && cancelConfirmation(order._recordId)}
+          disabled={isProcessing}
+          className={`px-4 py-2 rounded-lg text-xs transition-all flex items-center justify-center gap-1.5 w-full md:w-[120px] ${
+            isProcessing 
+              ? 'bg-primary/10 text-primary border border-primary/20' 
+              : 'bg-red-50 text-red-600 border border-red-100 hover:bg-red-100'
+          }`}
         >
-          <XCircle className="w-4 h-4" />
-          Cancel ({countdowns[order._recordId]}s)
+          {isProcessing ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Sending...
+            </>
+          ) : (
+            <>
+              <XCircle className="w-4 h-4" />
+              Cancel ({countdowns[order._recordId]}s)
+            </>
+          )}
         </button>
       );
     }
@@ -377,12 +432,12 @@ export default function OrdersDashboard() {
   };
 
   return (
-    <div className="min-h-screen pb-20 w-screen relative left-1/2 -translate-x-1/2 bg-gray-50/30">
+    <div className="min-h-screen pb-20 w-screen bg-gray-50/30">
       {loading && <LoadingOverlay />}
       {checkingAuth && <LoadingOverlay message="Securing session" />}
 
       <nav className="w-full bg-white border-b border-gray-100 sticky top-0 z-30">
-        <div className="max-w-6xl mx-auto w-full px-4 h-16 flex items-center gap-2 justify-between">
+        <div className="maxWidth mx-auto w-full px-4 h-16 flex items-center gap-2 justify-between">
           <div className="flex items-center gap-3">
             <button
               onClick={handleLogout}
@@ -425,7 +480,7 @@ export default function OrdersDashboard() {
         </div>
       </nav>
 
-      <main className="w-full max-w-6xl px-4 py-6 mx-auto">
+      <main className="w-full maxWidth px-4 py-6 mx-auto">
         {showSearch && (
           <div className="flex flex-col md:flex-row gap-4 mb-6 animate-in fade-in slide-in-from-top-2 duration-300">
             <div className="relative flex-1">
@@ -489,7 +544,7 @@ export default function OrdersDashboard() {
                                 )}
                               </div>
                               <div className="flex items-center gap-2 mt-0.5">
-                                <p className="text-xs text-gray-400">{order.userEmail}</p>
+                                <p className="text-xs text-gray-400">{order.contact}</p>
                                 {order.orderId && (
                                   <span className="text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded font-mono">
                                     {order.orderId}
@@ -578,7 +633,7 @@ export default function OrdersDashboard() {
                               day: 'numeric',
                               hour: '2-digit',
                               minute: '2-digit'
-                            }) : order.userEmail}
+                            }) : order.contact}
                           </p>
                         </div>
                       </div>
@@ -623,6 +678,15 @@ export default function OrdersDashboard() {
           </>
         )}
       </main>
+
+      {notification && (
+        <NotificationToast
+          message={notification.message}
+          type={notification.type}
+          duration={notification.duration}
+          onClose={() => setNotification(null)}
+        />
+      )}
     </div>
   );
 }

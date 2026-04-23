@@ -8,9 +8,11 @@ export const ThemeProvider = ({ children }) => {
   const [theme, setTheme] = useState('light');
 
   useEffect(() => {
-    const savedTheme = localStorage.getItem('friendly_theme') || 'light';
-    setTheme(savedTheme);
-    document.documentElement.classList.toggle('dark', savedTheme === 'dark');
+    const savedTheme = localStorage.getItem('friendly_theme');
+    const systemDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const initialTheme = savedTheme || (systemDark ? 'dark' : 'light');
+    setTheme(initialTheme);
+    document.documentElement.classList.toggle('dark', initialTheme === 'dark');
   }, []);
 
   const toggleTheme = () => {

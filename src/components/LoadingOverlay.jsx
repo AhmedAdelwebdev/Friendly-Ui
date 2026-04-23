@@ -15,8 +15,8 @@ export const LoadingOverlay = ({ message = 'Loading', type = 'default' }) => {
 
       {/* Loading Text with Animated Dots */}
       <div className="flex flex-col items-center gap-2">
-        <div className="text-2xl font-heading text-primary flex items-center gap-1.5">
-          <span className="tracking-tight">
+        <div className="text-2xl text-primary flex items-center gap-1.5">
+          <span className={`tracking-tight ${/[\u0600-\u06FF]/.test(message) ? 'font-tajawal font-bold' : 'font-heading'}`}>
             {message}
           </span>
           <span className="flex gap-1.5 mt-2">
@@ -25,8 +25,9 @@ export const LoadingOverlay = ({ message = 'Loading', type = 'default' }) => {
             <span className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse [animation-duration:1s] [animation-delay:400ms]"></span>
           </span>
         </div>
-        <p className="text-sm font-baloo text-gray-500 dark:text-gray-400 font-medium">
-          {type === 'ocr' ? 'جاري تحليل الصورة بالذكاء الاصطناعي' : ''}
+        <p className="text-sm font-tajawal text-gray-500 dark:text-gray-400 font-medium" dir="rtl">
+          {type === 'ocr' ? 'جاري تحليل الصورة ' : 
+           type === 'upload' ? 'جاري تجهيز طلبك' : ''}
         </p>
       </div>
     </div>

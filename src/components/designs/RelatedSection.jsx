@@ -4,9 +4,9 @@ import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import { DesignCard } from '@/components/designs/DesignCard';
 
-export const RelatedSection = ({ relatedItems }) => {
+export const RelatedSection = ({ relatedItems, className = "" }) => {
   return (
-    <section className="bg-gray-50 py-10 border-t border-gray-100">
+    <section className={`bg-gray-50 py-10 border-t border-gray-100 ${className}`}>
       <div className="mx-auto px-6">
         <div className="flex items-center justify-between mb-16">
           <div>

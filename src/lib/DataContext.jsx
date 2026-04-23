@@ -15,7 +15,7 @@ const DataContext = createContext({
 export const useData = () => useContext(DataContext);
 
 export const DataProvider = ({ children }) => {
-  const { showNotification, reportError } = useNotification();
+  const { reportError } = useNotification();
   // Initialize with fallbackData immediately for instant UI
   const [items, setItems] = useState(fallbackData);
   const [loading, setLoading] = useState(false);

@@ -4,11 +4,9 @@ import { FeaturedDesigns } from "@/components/home/FeaturedDesigns";
 
 export default function Home() {
   return (
-    <div className="flex flex-col w-full">
+    <div className="flex flex-col w-full *:sm:px-6">
       <HeroSection />
-      {/* Products Second */}
       <FeaturedDesigns type="Product" title="Premium Store" />
-      {/* Designs First */}
       <FeaturedDesigns type="Design" title="Latest Designs" />
       <FeaturesSection />
     </div>

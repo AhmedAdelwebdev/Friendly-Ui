@@ -8,7 +8,7 @@ import { NextResponse } from 'next/server';
 export async function POST(request) {
   try {
     const body = await request.json();
-    const { orderId, status, userName, userEmail, product } = body;
+    const { orderId, status, userName, product } = body;
 
     if (status?.toLowerCase() === 'completed' || status?.toLowerCase() === 'confirmed') {
       const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;

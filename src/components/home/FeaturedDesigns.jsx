@@ -18,7 +18,7 @@ export const FeaturedDesigns = ({ type = 'Design', title = 'Featured Designs', l
 
   return items.length > 0 && (
     <section className={`py-12 md:py-16 ${type === 'Product' ? 'bg-gray-100/30' : ''}`}>
-      <div className=" mx-auto px-4">
+      <div className=" mx-auto px-4 reveal animate-up">
         <div className="flex items-end justify-between mb-8 gap-4">
           <div className="flex-1 text-left">
             <h2 className="text-2xl md:text-3xl font-heading text-gray-900 mb-1">{title}</h2>

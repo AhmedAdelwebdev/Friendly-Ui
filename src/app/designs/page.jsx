@@ -11,7 +11,7 @@ export default function DesignsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeType, setActiveType] = useState('Product');
   const [currentPage, setCurrentPage] = useState(1);
-  const [showFilters, setShowFilters] = useState(false); 
+  const [showFilters, setShowFilters] = useState(false);
   const topRef = useRef(null);
 
   const itemsPerPage = 12;
@@ -89,16 +89,14 @@ export default function DesignsPage() {
 
   return (
     <div className="py-10 md:py-16">
-
       {/* Loading */}
       {loading && items.length === 0 && (
-        <LoadingOverlay message="Exploring library..." />
+        <LoadingOverlay />
       )}
 
       <div className="w-full">
-
         {/* Header */}
-        <div className="max-w-3xl mx-auto text-center mb-6">
+        <div className="max-w-3xl mx-auto text-center mb-6 reveal animate-down">
           <h1 className="text-3xl md:text-5xl font-heading text-primary mb-3">Shop & Gallery</h1>
           <p className="text-gray-500 font-medium text-xs md:text-base">
             Explore our dynamic catalog of products and designs.
@@ -106,7 +104,7 @@ export default function DesignsPage() {
         </div>
 
         {/* Search + Filters */}
-        <div ref={topRef} className={`relative w-[90vw] sm:max-w-[80vw] md:max-w-3xl mx-auto p-1 rounded-[27px] sm:rounded-full shadow-sm mb-10 bg-primary`}>
+        <div ref={topRef} className={`relative w-[90vw] sm:max-w-[80vw] md:max-w-3xl mx-auto p-1 rounded-[27px] sm:rounded-full shadow-sm mb-10 bg-primary reveal animate-up delay-100`}>
 
           <div className="flex flex-wrap gap-4 items-center">
 
@@ -160,11 +158,10 @@ export default function DesignsPage() {
               ))}
             </div>
           )}
-
         </div>
 
         {/* Grid */}
-        <div className="w-screen w-full max-w-6xl min-h-96 px-4 overflow-hidden">
+        <div className="w-full maxWidth min-h-96 px-4 overflow-hidden">
           {paginatedItems.length > 0 ? (
             <>
               <div className="grid grid-products gap-4">
@@ -174,7 +171,7 @@ export default function DesignsPage() {
               </div>
 
               {totalPages > 1 && (
-                <div className="sticky sm:relative bottom-4 p-4 bg-white mx-auto rounded-xl flex justify-center items-center gap-2 mt-12 shadow-sm border border-gray-100">
+                <div className="sticky sm:relative bottom-4 p-4 bg-white mx-auto rounded-xl flex justify-center items-center gap-2 mt-12 shadow-sm border border-gray-100 animate-up delay-200">
                   <button
                     onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
                     disabled={currentPage === 1}

@@ -5,6 +5,7 @@
 @theme {
   --font-fugaz: var(--font-fugaz-one);
   --font-baloo: var(--font-baloo-2);
+  --font-tajawal: var(--font-tajawal);
   --color-primary: #7549fb;
 
   /* Theme Tokens */
@@ -13,7 +14,11 @@
   --color-card: #ffffff;
   --color-muted: #64748b;
   --color-border: #ddd;
+
+  --transition-speed: 200ms;
+  --transition-ease: ease;
 }
+
 
 .dark {
   --color-body: #0f0a20;
@@ -23,12 +28,30 @@
   --color-border: #271f4e;
 }
 
+
+* {
+  transition: 
+    background-color var(--transition-speed) var(--transition-ease),
+    color var(--transition-speed) var(--transition-ease),
+    border-color var(--transition-speed) var(--transition-ease);
+}
+
+
+.maxWidth {
+  max-width: 1400px;
+}
+
 ::-webkit-scrollbar {
   display: none;
 }
 
 html, body {
   scroll-behavior: smooth;
+}
+
+/* Global Arabic Font Handling */
+[dir="rtl"], [lang="ar"], [lang="AR"] {
+  font-family: var(--font-tajawal), sans-serif !important;
 }
 
 body {
@@ -133,81 +156,45 @@ body {
 .dark .bg-gray-50\/30 {
   background-color: #1a1535 !important;
 }
+
 /* -------------------------------------------------------------------------- */
-/*                          PREMIUM ANIMATION SYSTEM                          */
+/*                     REVEAL ANIMATIONS (CROSS-BROWSER)                      */
 /* -------------------------------------------------------------------------- */
 
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(30px);
-    filter: blur(5px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-    filter: blur(0);
-  }
-}
-
-@keyframes fadeInDown {
-  from {
-    opacity: 0;
-    transform: translateY(-30px);
-    filter: blur(5px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-    filter: blur(0);
-  }
-}
-
-@keyframes zoomIn {
-  from {
-    opacity: 0;
-    transform: scale(0.9);
-    filter: blur(5px);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-    filter: blur(0);
-  }
-}
-
-/* Base reveal class */
+/* Base state for revealable elements */
 .reveal {
-  animation-duration: 0.8s;
-  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
-  animation-fill-mode: forwards;
   opacity: 0;
+  transition: all 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+  will-change: transform, opacity;
 }
 
-/* Specific animations */
-.fade-up { animation-name: fadeInUp; }
-.fade-down { animation-name: fadeInDown; }
-.zoom-in { animation-name: zoomIn; }
+/* Directions */
+.reveal.animate-up { transform: translateY(40px); }
+.reveal.animate-down { transform: translateY(-40px); }
+.reveal.animate-left { transform: translateX(-40px); }
+.reveal.animate-right { transform: translateX(40px); }
 
-/* Modern Scroll Trigger (No JS required) */
+/* Triggered state */
+.reveal.in-view {
+  opacity: 1;
+  transform: translate(0, 0);
+}
+
+/* Modern enhancement for supported browsers (Scroll-synced) */
 @supports (animation-timeline: view()) {
-  .reveal {
+  .reveal.scroll-driven:not(.in-view) {
+    animation: reveal-linear linear forwards;
     animation-timeline: view();
-    animation-range: 100px 10% cover 30%;
+    animation-range: entry 0% cover 30%;
+  }
+
+  .hero-animate {
+    animation-range: entry 0% cover 40%;
+  }
+
+  @keyframes reveal-linear {
+    from { opacity: 0; transform: translateY(40px); }
+    to { opacity: 1; transform: translateY(0); }
   }
 }
 
-/* Fallback for older browsers or simple entrance */
-@media (prefers-reduced-motion: no-preference) {
-  .animate-on-load {
-    opacity: 0;
-    animation: fadeInUp 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-  }
-}
-
-/* Staggered delays for children */
-.stagger-1 { animation-delay: 0.1s; }
-.stagger-2 { animation-delay: 0.2s; }
-.stagger-3 { animation-delay: 0.3s; }
-.stagger-4 { animation-delay: 0.4s; }
-.stagger-5 { animation-delay: 0.5s; }

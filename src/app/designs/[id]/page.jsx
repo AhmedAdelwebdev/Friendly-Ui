@@ -10,11 +10,13 @@ import { RelatedSection } from '@/components/designs/RelatedSection';
 import { MessageCircle } from 'lucide-react';
 import { useMemo } from 'react';
 import { LoadingOverlay } from '@/components/LoadingOverlay';
+import { useNotification } from '@/lib/NotificationContext';
 
 export default function ProductDetailPage() {
   const { id } = useParams();
   const router = useRouter();
-  const { openPayment } = usePayment();
+  const payment = usePayment();
+  const { openPayment } = payment || { openPayment: () => {} };
   const { orders } = useOrders();
   const { items, loading } = useData();
 
@@ -36,6 +38,8 @@ export default function ProductDetailPage() {
     return filtered.slice(0, 3);
   }, [item, items]);
 
+  const { showNotification } = useNotification();
+
   const handleShare = async () => {
     if (typeof window !== 'undefined') {
       if (navigator.share) {
@@ -44,7 +48,7 @@ export default function ProductDetailPage() {
         } catch (err) { }
       } else {
         await navigator.clipboard.writeText(window.location.href);
-        alert('Link copied!');
+        showNotification('Link copied to clipboard | تم نسخ الرابط إلى الحافظة', 'success');
       }
     }
   };
@@ -53,21 +57,21 @@ export default function ProductDetailPage() {
     if (!item || (loading && items.length === 0)) {
       return <LoadingOverlay />;
     }
-    // return (
-    //   <div className="min-h-screen flex items-center justify-center flex-col text-center p-4">
-    //     <div className="w-24 h-24 bg-gray-50 rounded-full flex items-center justify-center text-black/20 mb-6">
-    //       <MessageCircle size={48} />
-    //     </div>
-    //     <h2 className="text-3xl font-heading text-gray-900 mb-4">Design Not Found</h2>
-    //     <button onClick={() => router.back()} className="text-primary font-bold hover:underline">Return to Gallery</button>
-    //   </div>
-    // );
+    return (
+      <div className="min-h-screen flex items-center justify-center flex-col text-center p-4">
+        <div className="w-24 h-24 bg-gray-50 rounded-full flex items-center justify-center text-black/20 mb-6">
+          <MessageCircle size={48} />
+        </div>
+        <h2 className="text-3xl font-heading text-gray-900 mb-4">Design Not Found</h2>
+        <button onClick={() => router.back()} className="text-primary font-bold hover:underline">Return to Gallery</button>
+      </div>
+    );
   }
 
   return (
     <div className="min-h-screen">
       <div className="mx-auto px-6 py-10">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-10 items-start">
+        <div className="grid grid-cols-1 sm:grid-cols-12 gap-10 items-start">
           <ProductGallery images={item.images} title={item.title} category={item.category} />
           <ProductInfo
             item={item}
@@ -78,7 +82,7 @@ export default function ProductDetailPage() {
         </div>
       </div>
 
-      {(relatedItems.length > 1) && <RelatedSection relatedItems={relatedItems} />}
+      {(relatedItems.length > 1) && <RelatedSection relatedItems={relatedItems} className="reveal animate-up" />}
     </div>
   );
 }

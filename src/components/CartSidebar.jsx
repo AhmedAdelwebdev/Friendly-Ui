@@ -2,6 +2,7 @@
 
 import { useState, useRef } from 'react';
 import { useOrders } from '@/lib/CartContext';
+import { useNotification } from '@/lib/NotificationContext';
 import { X, ShoppingBag, Download, Clock, Trash2, RotateCcw, Copy, Check } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -95,6 +96,7 @@ export const CartSidebar = () => {
 
 
 const OrderItem = ({ order, onRemove }) => {
+  const { showNotification } = useNotification();
   const [stage, setStage] = useState('idle'); // idle, confirm, undoing
   const [timeLeft, setTimeLeft] = useState(5);
   const timerRef = useRef(null);
@@ -131,6 +133,7 @@ const OrderItem = ({ order, onRemove }) => {
 
     timerRef.current = setTimeout(() => {
       onRemove(order.orderId || order.id);
+      showNotification('Item removed from library | تم حذف المنتج من مكتبتك', 'success', 2000);
     }, 5000);
   };
 
@@ -185,22 +188,16 @@ const OrderItem = ({ order, onRemove }) => {
         <div className="relative size-16 bg-gray-50 rounded-xl overflow-hidden border border-gray-100 flex-shrink-0">
           <Image
             src={order.image || DEFAULT_IMAGE}
-            alt=""
-            unoptimized
-            width={100}
-            height={100}
             className="size-full object-cover"
-            onError={(e) => { e.target.src = DEFAULT_IMAGE; }}
+            alt="" unoptimized width={100} height={100}
+            onError={(e) => { e.target.src = DEFAULT_IMAGE }}
           />
         </div>
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between gap-2">
 
-            <Link
-              href={`/designs/${order.id}`}
-              className="text-base font-semibold text-gray-900 truncate"
-            >
+            <Link href={`/designs/${order.id}`} className="text-base font-semibold text-gray-900 truncate" >
               {order.title}
             </Link>
 
@@ -230,10 +227,7 @@ const OrderItem = ({ order, onRemove }) => {
               </div>
             )}
 
-            <button
-              onClick={handleCopy}
-              className="px-2.5 py-1 bg-gray-100 rounded-md text-gray-600 hover:bg-primary/10 hover:text-primary transition-all text-xs font-bold"
-            >
+            <button onClick={handleCopy} className="px-2.5 py-1 bg-gray-100 rounded-md text-gray-600 hover:bg-primary/10 hover:text-primary transition-all text-xs font-bold" >
               {copied ? 'Copied!' : 'ID'}
             </button>
 
@@ -246,8 +240,7 @@ const OrderItem = ({ order, onRemove }) => {
 
         {order.status === 'completed' ? (
           <Link
-            href={getDownloadLink(order.fileLink) || '#'}
-            target="_blank"
+            href={getDownloadLink(order.fileLink) || '#'} target="_blank"
             className="flex-1 bg-primary text-white py-2.5 rounded-xl text-sm flex items-center justify-center gap-2 hover:opacity-90 transition-all"
           >
             <Download size={14} /> Download

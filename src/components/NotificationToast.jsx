@@ -1,40 +1,78 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { CheckCircle, X, AlertCircle } from 'lucide-react';
 
-export default function NotificationToast({ message, type = 'success', onClose }) {
-  const [isVisible, setIsVisible] = useState(true);
+export default function NotificationToast({ message, type = 'success', duration = 4000, onClose }) {
+  const [isVisible, setIsVisible] = useState(false);
+  const timerRef = useRef(null); // مرجع للمؤقت للتحكم به
 
-  if (!isVisible) return null;
+  // دالة لبدء المؤقت
+  const startTimer = () => {
+    if (duration === 'stop') return;
+    
+    timerRef.current = setTimeout(() => {
+      handleClose();
+    }, duration);
+  };
+
+  // دالة لإيقاف المؤقت
+  const clearTimer = () => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+    }
+  };
+
+  useEffect(() => {
+    setIsVisible(true);
+    startTimer();
+
+    return () => clearTimer();
+  }, [duration]);
+
+  const handleClose = () => {
+    setIsVisible(false);
+    setTimeout(onClose, 300);
+  };
 
   return (
-    <div className="fade-in fixed bottom-6 left-1/2 -translate-x-1/2 z-[300] w-full max-w-sm px-4">
-      <div className={`flex items-center gap-3 px-5 py-4 rounded-2xl shadow-xl border transition-all duration-300
+    <div 
+      className={`fixed bottom-8 left-1/2 -translate-x-1/2 z-[300] w-full max-w-lg sm:max-w-3xl px-4 sm:px-8 transition-all duration-500 ease-out
+        ${isVisible ? 'translate-y-0 opacity-100 scale-100' : 'translate-y-10 opacity-0 scale-95'}`}
+        onMouseEnter={clearTimer} onMouseLeave={startTimer} 
+    >
+      <div className={`flex items-center gap-3 px-5 py-4 rounded-2xl shadow-2xl border backdrop-blur-lg
         ${type === 'success' 
-          ? 'bg-white border-green-600/15 text-green-600' 
-          : 'bg-white border-red-600/15 text-red-600'
+          ? 'bg-green-600/40 border-green-600/30 text-green-600' 
+          : 'bg-red-600/40 border-red-600/30 text-red-600'
         }`}>
         
-        <div className={`flex-shrink-0 w-9 h-9 rounded-xl flex items-center justify-center
-          ${type === 'success' ? 'bg-green-500/15' : 'bg-red-500/15'}`}>
+        <div className={`flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center bg-white`}>
           {type === 'success' ? (
-            <CheckCircle size={22} />
+            <CheckCircle size={24} className="animate-in zoom-in duration-500" />
           ) : (
-            <AlertCircle size={22} />
+            <AlertCircle size={24} className="animate-in zoom-in duration-500" />
           )}
         </div>
 
         <div className="flex-1 min-w-0">
-          <p className="text-sm text-gray-900 font-medium leading-tight">{message}</p>
+          {message.includes('|') ? (
+            <div className="flex flex-col">
+              <p className="text-sm text-gray-900 font-semibold leading-tight">
+                {message.split('|')[0].trim()}
+              </p>
+              <p className="text-[12px] text-gray-800 font-medium leading-tight mt-0.5">
+                {message.split('|')[1].trim()}
+              </p>
+            </div>
+          ) : (
+            <p className="text-sm text-gray-900 font-semibold leading-tight">{message}</p>
+          )}
         </div>
 
         <button 
-          onClick={() => {
-            setIsVisible(false);
-            setTimeout(onClose, 300);
-          }}
-          className="flex-shrink-0 p-1.5 -mr-1 text-gray-400 hover:text-gray-600 hover:bg-primary/20 rounded-full transition-colors"
+          className="flex-shrink-0 p-2 -mr-1 bg-red-500/20 rounded-xl transition-colors bg-white"
+          onClick={handleClose}
         >
           <X size={18} />
         </button>

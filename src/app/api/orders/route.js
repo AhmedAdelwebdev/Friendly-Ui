@@ -94,11 +94,12 @@ export async function POST(request) {
 
     const newOrderFields = {
       userName: sanitize(body.name),
-      userEmail: sanitize(body.telegramId?.toString()),
+      telegram_id: sanitize(body.telegramId?.toString()),
+      contact: sanitize(body.contact),
       product: sanitize(body.productName),
       price: Number(body.priceUSD) || 0,
       paymentMethod: resolvedMethod,
-      image: body.productImage, // Store product image URL
+      image: body.productImage, 
       status: body.status || 'Pending',
       confirmedDate: body.confirmedDate || null,
       orderDate: new Date().toISOString(),
@@ -113,28 +114,37 @@ export async function POST(request) {
     
     // ROOT CAUSE FIX: Fetch actual field names from Airtable to avoid mismatch errors
     const availableFields = await getTableFields(process.env.AIRTABLE_ORDERS_TABLE);
+    console.log('DEBUG: Available fields in Airtable:', availableFields);
     
     // Create the final payload by only including fields that actually exist in the base
     const finalFields = {};
     
     // Define a map of our local names to possible Airtable names (casing variations)
     const fieldMapping = {
-      userName: ['userName', 'Username', 'name', 'Name'],
-      userEmail: ['userEmail', 'Email', 'Customer Email', 'telegramId'],
-      product: ['product', 'Product', 'productName', 'Product Name'],
-      price: ['price', 'Price', 'Amount', 'Total'],
-      paymentMethod: ['paymentMethod', 'Method', 'Payment Method'],
-      status: ['status', 'Status', 'Order Status'],
-      confirmedDate: ['confirmedDate', 'Confirmed Date', 'Approved At'],
-      orderDate: ['orderDate', 'Date', 'Ordered At'],
-      orderId: ['orderid', 'orderId', 'OrderId', 'ID']
+      userName: ['userName'],
+      telegram_id: ['telegramId', 'telegram_id'],
+      contact: ['contact'],
+      product: ['product'],
+      price: ['price'],
+      paymentMethod: ['paymentMethod'],
+      status: ['status'],
+      confirmedDate: ['confirmedDate'],
+      orderDate: ['orderDate'],
     };
 
     // Populate finalFields based on available columns
     for (const [key, alternatives] of Object.entries(fieldMapping)) {
       const match = alternatives.find(alt => availableFields.includes(alt)) || availableFields.find(f => f.toLowerCase() === alternatives[0].toLowerCase());
       if (match && newOrderFields[key] !== undefined) {
-        finalFields[match] = newOrderFields[key];
+        let val = newOrderFields[key];
+        
+        // Attempt numeric conversion for fields that look like they should be numbers (like telegramId)
+        if (key === 'telegramId' || key === 'price') {
+          const num = Number(val);
+          if (!isNaN(num)) val = num;
+        }
+        
+        finalFields[match] = val;
       }
     }
 
@@ -159,7 +169,12 @@ export async function POST(request) {
     return NextResponse.json({ ...newOrderFields, id: created.id, _recordId: created.id });
   } catch (error) {
     await logErrorToTelegram(error, 'POST /api/orders');
-    return NextResponse.json({ error: 'Failed to create order', details: error.message }, { status: 500 });
+    console.error('Airtable Error Detail:', error);
+    return NextResponse.json({ 
+      error: 'Airtable Creation Failed', 
+      details: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    }, { status: 500 });
   }
 }
 

@@ -41,7 +41,7 @@ export const ProductGallery = ({ images = [], title }) => {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 sm:col-span-5 reveal animate-up">
 
       {/* Slider */}
       <div
@@ -55,9 +55,9 @@ export const ProductGallery = ({ images = [], title }) => {
         onMouseLeave={handleEnd}
       >
         {/* Track */}
-        <div
-          className="flex"
+        <div 
           style={{
+            display: 'flex',
             transform: `translateX(calc(-${index * 100}% + ${dragX}px))`,
             transition: isDragging.current ? 'none' : 'transform 0.4s ease',
           }}
@@ -67,26 +67,20 @@ export const ProductGallery = ({ images = [], title }) => {
               <Image
                 src={img}
                 alt={`${title}-${i}`}
-                priority={i === 0} width={300} height={300}
+                priority width={300} height={300}
                 className="object-cover pointer-events-none size-full"
-                draggable={false}
+                draggable={false} unoptimized
               />
             </div>
           ))}
         </div>
 
         {/* Arrows */}
-        <button
-          onClick={prev}
-          className="absolute left-3 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition hidden sm:block"
-        >
+        <button onClick={prev} className="absolute left-3 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition hidden sm:block">
           <ChevronLeft size={20} />
         </button>
 
-        <button
-          onClick={next}
-          className="absolute right-3 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition hidden sm:block"
-        >
+        <button onClick={next} className="absolute right-3 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition hidden sm:block">
           <ChevronRight size={20} />
         </button>
       </div>
@@ -97,9 +91,8 @@ export const ProductGallery = ({ images = [], title }) => {
           <button
             key={i}
             onClick={() => setIndex(i)}
-            className={`h-2 rounded-full transition-all ${
-              i === index ? 'w-6 bg-primary' : 'w-2 bg-primary/30'
-            }`}
+            className={`h-2 rounded-full transition-all ${i === index ? 'w-6 bg-primary' : 'w-2 bg-primary/30'
+              }`}
           />
         ))}
       </div>
