@@ -5,7 +5,7 @@ import Image from 'next/image';
 
 export const HeroSection = () => {
   return (
-    <section className="relative py-12 min-h-[80vh]">
+    <section className="relative py-12 min-h-lg">
       {/* Subtle Background Glow */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full maxWidth h-[400px] bg-primary/5 rounded-full blur-[100px] -z-10" />
 
@@ -30,7 +30,7 @@ export const HeroSection = () => {
 
           {/* Banner Image */}
           <div className='flex-1 reveal animate-up delay-300' suppressHydrationWarning>
-            <div className="relative min-h-60 max-w-xl rounded-4xl overflow-hidden shadow-full border-4 border-white">
+            <div className="relative h-64 sm:h-full max-w-xl rounded-4xl overflow-hidden shadow-full border-4 border-white">
               <Image src="/Bannar.png" alt="Friendly UI Banner" width={100} height={100} unoptimized
                 className="size-full object-cover" priority
               />

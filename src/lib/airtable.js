@@ -1,6 +1,5 @@
 export const getBaseUrl = (tableId) => `https://api.airtable.com/v0/${process.env.AIRTABLE_BASE_ID}/${encodeURIComponent(tableId)}`;
 export const getMetaUrl = () => `https://api.airtable.com/v0/meta/bases/${process.env.AIRTABLE_BASE_ID}/tables`;
-import { logErrorToTelegram } from './error-logger';
 
 const getHeaders = () => {
   if (!process.env.AIRTABLE_PAT) {

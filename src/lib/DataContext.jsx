@@ -25,7 +25,7 @@ export const DataProvider = ({ children }) => {
   const loadData = useCallback(async (silent = true) => {
     if (!silent) setLoading(true);
     try {
-      const res = await fetch('/api/products');
+      const res = await fetch('/api/database/products');
       if (res.status === 503) {
         setIsBackendDown(true);
         reportError('Database Offline: Site is running on fallback data.', 'Inventory Sync');

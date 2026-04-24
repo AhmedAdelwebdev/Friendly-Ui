@@ -152,8 +152,8 @@ export default function OrdersDashboard() {
     setLoading(true);
     try {
       const [ordersRes, productsRes] = await Promise.all([
-        fetch('/api/orders'),
-        fetch('/api/products')
+        fetch('/api/database/orders'),
+        fetch('/api/database/products')
       ]);
 
       if (ordersRes.ok) {
@@ -252,7 +252,7 @@ export default function OrdersDashboard() {
         throw new Error('No valid numeric Telegram ID found for this customer. Please check the telegramId/contact field.');
       }
 
-      const deliveryRes = await fetch('/api/telegram', {
+      const deliveryRes = await fetch('/api/telegram/order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -269,8 +269,7 @@ export default function OrdersDashboard() {
         throw new Error(`Telegram Delivery Failed: ${delErr.error || 'Check Bot Token or Chat ID'}`);
       }
 
-      // 3. Only if delivery succeeds, update Airtable
-      const updateRes = await fetch('/api/orders', {
+      const updateRes = await fetch('/api/database/orders', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

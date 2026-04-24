@@ -37,7 +37,7 @@ export default function NotificationToast({ message, type = 'success', duration 
 
   return (
     <div 
-      className={`fixed bottom-8 left-1/2 -translate-x-1/2 z-[300] w-full max-w-lg sm:max-w-3xl px-4 sm:px-8 transition-all duration-500 ease-out
+      className={`fixed bottom-8 left-1/2 -translate-x-1/2 z-[300] w-full max-w-lg sm:max-w-3xl px-8 transition-all duration-500 ease-out
         ${isVisible ? 'translate-y-0 opacity-100 scale-100' : 'translate-y-10 opacity-0 scale-95'}`}
         onMouseEnter={clearTimer} onMouseLeave={startTimer} 
     >

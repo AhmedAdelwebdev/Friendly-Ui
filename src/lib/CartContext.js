@@ -21,7 +21,7 @@ export const OrdersProvider = ({ children }) => {
         // Background refresh: update images and file links from Airtable to prevent URL expiration
         (async () => {
           try {
-            const res = await fetch('/api/products');
+            const res = await fetch('/api/database/products');
             if (res.ok) {
               const products = await res.json();
               setOrders(prev => prev.map(order => {
@@ -62,7 +62,7 @@ export const OrdersProvider = ({ children }) => {
 
       await Promise.all(pendingOrders.map(async (order) => {
         try {
-          const res = await fetch(`/api/orders?id=${order.orderId}`, { cache: 'no-store' });
+          const res = await fetch(`/api/database/orders?id=${order.orderId}`, { cache: 'no-store' });
           if (!res.ok) return;
           
           const orderData = await res.json();

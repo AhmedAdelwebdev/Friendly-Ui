@@ -53,7 +53,7 @@ export const NotificationProvider = ({ children }) => {
 
     // 3. Silent report to Telegram
     try {
-      fetch('/api/log-error', {
+      fetch('/api/telegram/error', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
@@ -72,7 +72,7 @@ export const NotificationProvider = ({ children }) => {
   }, []);
 
   return (
-    <NotificationContext.Provider value={{ showNotification, reportError }}>
+    <NotificationContext.Provider value={{ showNotification, reportError, hideNotification }}>
       {children}
       {notification && (
         <NotificationToast

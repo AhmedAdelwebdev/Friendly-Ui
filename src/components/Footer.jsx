@@ -20,7 +20,7 @@ export const Footer = () => {
               className="size-12 sm:size-14 group-hover:scale-105 duration-300!"
             />
             <div className="flex flex-col leading-tight">
-              <span className="font-heading text-lg sm:text-xl text-primary">Friendly Ui</span>
+              <span className="font-heading text-lg sm:text-xl text-primary not-italic">Friendly Ui</span>
               <span className="text-black/70 text-xs sm:text-sm font-medium -mt-1">Ui/Ux Platform</span>
             </div>
           </Link>

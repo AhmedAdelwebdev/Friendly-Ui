@@ -5,7 +5,7 @@ import { getLanguage, setLanguage } from '@/utils/storage';
 import { translations, getTranslation } from '@/lang/translations';
 import { getDownloadLink, formatDate } from '@/utils/formatters';
 import { LoadingOverlay } from '@/components/LoadingOverlay';
-import { CheckCircle, Clock, XCircle, Download, Globe } from 'lucide-react';
+import { CheckCircle, Clock, XCircle, Download } from 'lucide-react';
 import Link from 'next/link';
 
 export default function OrderPage({ params }) {
@@ -20,19 +20,18 @@ export default function OrderPage({ params }) {
   useEffect(() => {
     const savedLang = getLanguage();
     setLangState(savedLang);
-    document.documentElement.dir = savedLang === 'ar' ? 'rtl' : 'ltr';
     fetchOrderDetails();
   }, []);
 
   const fetchOrderDetails = async () => {
     try {
-      const res = await fetch(`/api/orders?id=${id}`);
+      const res = await fetch(`/api/database/orders?id=${id}`);
       if (!res.ok) throw new Error('Order not found');
       const foundOrder = await res.json();
       
       let fileUrl = null;
       if (foundOrder.status === 'Completed' || foundOrder.Status === 'Completed') {
-        const prodRes = await fetch('/api/products');
+        const prodRes = await fetch('/api/database/products');
         if (prodRes.ok) {
            const prods = await prodRes.json();
            const match = prods.find(p => p.title === foundOrder.product || p.title === foundOrder.productName || p.id === foundOrder.productId);
@@ -52,7 +51,6 @@ export default function OrderPage({ params }) {
     const newLang = lang === 'en' ? 'ar' : 'en';
     setLangState(newLang);
     setLanguage(newLang);
-    document.documentElement.dir = newLang === 'ar' ? 'rtl' : 'ltr';
   };
 
   const t = (key, params) => getTranslation(lang, key, params);
@@ -62,7 +60,7 @@ export default function OrderPage({ params }) {
     <div className="min-h-screen flex items-center justify-center p-4">
       <div className="bg-red-50 text-red-600 p-6 rounded-2xl text-center">
         <XCircle className="w-12 h-12 mx-auto mb-4 opacity-50" />
-        <h2 className="text-xl font-bold mb-2">Order Not Found</h2>
+        <h2 className="text-xl mb-2">Order Not Found</h2>
         <p>The order ID you provided is invalid or the order has been removed.</p>
       </div>
     </div>
@@ -71,96 +69,84 @@ export default function OrderPage({ params }) {
   const isCompleted = (order.status || '').toLowerCase() === 'completed';
 
   return (
-    <div className={`min-h-screen bg-gray-50 flex items-center justify-center p-4 py-12 ${lang === 'ar' ? 'font-tajawal' : 'font-sans'}`}>
-      <div className="bg-white max-w-xl w-full rounded-3xl shadow-xl overflow-hidden border border-gray-100 animate-in zoom-in-95 duration-500">
-        
-        {/* Header */}
-        <div className="bg-primary/5 p-6 sm:p-8 flex items-center justify-between border-b border-primary/10">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-primary/10 text-primary rounded-xl flex items-center justify-center shrink-0">
-              {isCompleted ? <CheckCircle size={24} /> : <Clock size={24} />}
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-gray-900 leading-tight">
-                {isCompleted ? t('orderReadyTitle') : t('orderReceivedTitle')}
-              </h1>
-              <p className="text-sm text-gray-500 mt-1">
-                {t('greeting')} {order.userName || order.name || 'Customer'}
-              </p>
-            </div>
-          </div>
-          <button 
-            onClick={toggleLanguage}
-            className="flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium text-gray-700 shrink-0"
-          >
-            <Globe size={16} />
-            {t('languageToggle')}
-          </button>
-        </div>
+  <div dir={lang === 'ar' ? 'rtl' : 'ltr'} className={`min-h-screen bg-gray-50 ${lang === 'ar' ? 'font-tajawal' : 'font-sans'}`}>
+    {/* Container */}
+    <div className="max-w-xl lg:max-w-2xl mx-auto px-4 lg:px-6 py-8 space-y-6">
 
-        {/* Body */}
-        <div className="p-6 sm:p-8 space-y-6">
-          <p className="text-gray-600 leading-relaxed text-[15px]">
-            {isCompleted 
-              ? t('readyText') 
-              : t('receivedText', { product: order.product || order.productName || 'Digital Product' })}
+      {/* Status */}
+      <div className="flex items-center gap-6 w-fit mx-auto">
+        <div className={`mx-auto w-16 h-16 flex items-center justify-center rounded-2xl ${
+          isCompleted ? 'bg-green-500/15 text-green-500' : 'bg-amber-500/15 text-amber-500'
+        }`}>
+          {isCompleted ? <CheckCircle size={30} /> : <Clock size={30} />}
+        </div>
+        <div>
+          <h2 dir={lang === 'ar' ? 'rtl' : 'ltr'} className="text-xl lg:text-2xl flex items-center justify-center gap-2">
+            {isCompleted ? t('orderReadyTitle') : t('orderReceivedTitle')}
+          </h2>
+
+          <p className="text-gray-600 mt-1 text-base">
+            {t('greeting')} {order.name || order.userName || 'Customer'}
           </p>
-
-          <div className="bg-gray-50 rounded-2xl p-5 space-y-4 border border-gray-100">
-            <div className="flex justify-between items-center pb-4 border-b border-gray-200">
-              <span className="text-gray-500 text-sm">{t('product')}</span>
-              <span className="font-semibold text-gray-900 text-right">{order.product || order.productName}</span>
-            </div>
-            
-            <div className="flex justify-between items-center pb-4 border-b border-gray-200">
-              <span className="text-gray-500 text-sm">{t('status')}</span>
-              <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium ${isCompleted ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'}`}>
-                {isCompleted ? t('completed') : t('pending')}
-              </span>
-            </div>
-
-            <div className="flex justify-between items-center pb-4 border-b border-gray-200">
-              <span className="text-gray-500 text-sm">{t('price')}</span>
-              <span className="font-medium text-gray-900">${order.price}</span>
-            </div>
-
-            <div className="flex justify-between items-center">
-              <span className="text-gray-500 text-sm">{t('date')}</span>
-              <span className="text-sm text-gray-900 text-right" dir="ltr">
-                {formatDate(order.orderDate)}
-              </span>
-            </div>
-          </div>
-
-          {isCompleted && order.fileLink && (
-            <div className="pt-2">
-              <Link 
-                href={getDownloadLink(order.fileLink)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full flex items-center justify-center gap-2 bg-primary text-white py-4 rounded-xl font-bold shadow-lg shadow-primary/20 hover:scale-[1.02] transition-transform"
-              >
-                <Download size={20} />
-                {t('download')}
-              </Link>
-              <p className="text-center text-xs text-gray-500 mt-3">
-                {t('downloadText')}
-              </p>
-            </div>
-          )}
-        </div>
-
-        {/* Footer */}
-        <div className="bg-gray-50 p-6 text-center border-t border-gray-100">
-          <p className="text-sm text-gray-600 mb-2">{t('helpText')}</p>
-          <a href="https://t.me/Friendly_Ui" target="_blank" rel="noopener noreferrer" className="text-primary font-bold hover:underline">
-            @Friendly_Ui
-          </a>
-          <div className="mt-4 text-xs text-gray-400">
-            {t('thanks')} <span className="font-semibold text-gray-600">{t('brand')}</span>
-          </div>
         </div>
       </div>
+
+      {/* Info Cards */}
+      <div className="space-y-3">
+        
+        {[
+          { label: t('product'), value: order.product || order.productName },
+          { 
+            label: t('price'), 
+            value: (order.paymentMethod?.toLowerCase().includes('vodafone') && order.price) 
+              ? `$${order.price} (${order.price * 50} EGP)` 
+              : `$${order.price}` 
+          },
+          { label: t('date'), value: formatDate(order.orderDate), dir: 'ltr' }
+        ].map((item, i) => (
+          <div key={i} className="bg-white border border-gray-100 rounded-xl p-4 flex justify-between items-start gap-3">
+            <span className="text-primary text-base font-bold">{item.label}</span>
+            <span className="text-gray-900 text-base" dir={item.dir}>
+              {item.value}
+            </span>
+          </div>
+        ))}
+
+        {/* Status */}
+        <div className="bg-white border border-gray-100 rounded-xl p-4 flex justify-between items-center">
+          <span className="text-primary text-base font-bold">{t('status')}</span>
+          <span className={`flex items-center gap-1 text-sm px-6 py-1.5 rounded-md ${
+            isCompleted ? 'bg-green-500/15 text-green-500' : 'bg-amber-500/15 text-amber-500'
+          }`}>
+            {isCompleted ? t('completed') : t('pending')}
+          </span>
+        </div>
+      </div>
+
+
+      {/* CTA */}
+      {isCompleted && order.fileLink && (
+        <div>
+          <Link dir='rtl' target="_blank"
+            href={getDownloadLink(order.fileLink)}
+            className="w-full flex items-center justify-center gap-2 bg-primary text-white py-3 lg:py-4 rounded-xl font-medium text-base hover:opacity-90 transition shadow-md"
+          >
+            <Download size={18} />
+            {t('download')}
+          </Link>
+
+          <p className="text-center text-xs text-gray-600 mt-3">
+            {t('downloadText')}
+          </p>
+        </div>
+      )}
+
+      {/* Language Button ONLY */}
+      <button dir='rtl' onClick={toggleLanguage} className="w-full flex items-center justify-center gap-2 text-primary py-3 lg:py-4 rounded-xl font-medium text-base hover:opacity-90 transition" >
+        <span>{t('languageToggle')}</span> 
+      </button>
     </div>
-  );
+  </div>
+);
+
 }

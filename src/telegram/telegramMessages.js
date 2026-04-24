@@ -13,7 +13,7 @@ If you have any questions or need help, feel free to reach out anytime:
 — <b>Friendly UI</b>`.trim();
 };
 
-export const buildOrderReadyMessage = (order, downloadLink) => {
+export const buildOrderReadyMessage = (order) => {
   const productName = order.product || order.productName || 'Digital Product';
   return `<b>🎉 Your Order is Ready</b>
 
@@ -23,10 +23,8 @@ Your order has been successfully completed and is now ready for access.
 <b>Product</b>
 ${productName}
 
-<b>⬇️ Download</b>
-${downloadLink}
+Please click the <b>⬇️ Download</b> button below to access your files from the order page.
 
-You can use this link anytime to access your files.
 If you need any help or have questions, feel free to contact us anytime:
 @Friendly_Ui
 

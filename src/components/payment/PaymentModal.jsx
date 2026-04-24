@@ -34,7 +34,7 @@ export const PaymentModal = () => {
   const { activeItem, isPaymentOpen, closePayment } = usePayment();
   const { addOrder, setIsOrdersOpen } = useOrders();
   const { isBackendDown } = useData();
-  const { showNotification } = useNotification();
+  const { showNotification, hideNotification } = useNotification();
 
   // 0: Telegram Auth, 1: Info, 2: Method, 3: Process/Success
   const [step, setStep] = useState(0);
@@ -189,7 +189,7 @@ export const PaymentModal = () => {
       formData.append('message', message);
       if (screenshot) formData.append('photo', screenshot);
 
-      await fetch('/api/notify', {
+      await fetch('/api/telegram/notify', {
         method: 'POST',
         body: formData
       });
@@ -276,14 +276,7 @@ export const PaymentModal = () => {
         priceMatch = regex.test(normalizedText) || regex.test(fullText);
       }
 
-      // 3. Special Case: Partial match for USSD popups (if it sees 40 instead of 1140 but everything else is perfect)
-      if (!priceMatch && isVodafoneUSSD && pStr.length >= 3) {
-        const suffix = pStr.slice(-2);
-        if (fullText.includes(suffix) || normalizedText.includes(suffix)) {
-          console.warn('Partial price match on USSD detected.');
-          priceMatch = true;
-        }
-      }
+
 
       const phoneMatch = normalizedText.includes(targetNumber) ||
         normalizedText.includes(targetNumber.slice(1)) ||
@@ -334,6 +327,10 @@ export const PaymentModal = () => {
       showNotification(`${finalMsgEn} | ${finalMsgAr}`, 'error', 'stop');
       if (newFails >= 3) setShowWhatsApp(true);
       return;
+    } else {
+      // Clear any previous error toasts
+      if (hideNotification) hideNotification();
+      showNotification(txIsAr('Receipt verified successfully!', 'تم التحقق من الإيصال بنجاح!'), 'success', 3000);
     }
     setStatus('idle');
   };
@@ -374,7 +371,7 @@ export const PaymentModal = () => {
     const orderId = generateOrderId('VC');
 
     try {
-      const resp = await fetch('/api/orders', {
+      const resp = await fetch('/api/database/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -408,7 +405,7 @@ export const PaymentModal = () => {
       // Notify Customer (Pending Message)
       const currentTgId = telegramId || localStorage.getItem('friendly_chat_id');
       
-      const notifyResp = await fetch('/api/telegram', {
+      const notifyResp = await fetch('/api/telegram/order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -447,7 +444,7 @@ export const PaymentModal = () => {
     const orderId = details.id || generateOrderId('PP');
 
     try {
-      const resp = await fetch('/api/orders', {
+      const resp = await fetch('/api/database/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -487,7 +484,7 @@ export const PaymentModal = () => {
       // Auto-deliver via Telegram for PayPal
       const currentTgId = telegramId || localStorage.getItem('friendly_chat_id');
       
-      const deliverResp = await fetch('/api/telegram', {
+      const deliverResp = await fetch('/api/telegram/order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

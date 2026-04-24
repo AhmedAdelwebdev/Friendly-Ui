@@ -9,7 +9,7 @@ export const sendTelegramOrderMessage = async (chatId, type, order, fileLink = n
   if (type === 'received') {
     text = buildOrderReceivedMessage(order);
   } else if (type === 'ready') {
-    text = buildOrderReadyMessage(order, getDownloadLink(fileLink));
+    text = buildOrderReadyMessage(order);
   } else {
     throw new Error('Invalid message type');
   }
@@ -21,8 +21,9 @@ export const sendTelegramOrderMessage = async (chatId, type, order, fileLink = n
     if (urlBase.includes('localhost')) {
       urlBase = 'https://friendlyui.vercel.app'; // Telegram API rejects localhost URLs
     }
+    const buttonText = type === 'ready' ? '⬇️ Download' : 'View Order Details';
     reply_markup.inline_keyboard.push([
-      { text: '🔍 View Order Details', url: `${urlBase}/order/${orderId}` }
+      { text: buttonText, url: `${urlBase}/order/${orderId}` }
     ]);
   }
 

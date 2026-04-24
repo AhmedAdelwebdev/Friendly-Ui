@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { getRecords, createRecord, getTableFields } from '@/lib/airtable';
-import { logErrorToTelegram } from '@/lib/error-logger';
+import { logErrorToTelegram } from '@/lib/logError';
 
 const rateLimit = new Map();
 
@@ -29,23 +29,23 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
     const secret = searchParams.get('secret');
-    
+
     const cookieStore = await cookies();
     const token = cookieStore.get('admin_token')?.value;
 
     if (token === 'google_authenticated') {
       if (id) {
-         // Fallback to record ID if needed
-         let filterStr = `{orderId} = '${id}'`;
-         if (id.startsWith('rec')) filterStr = `RECORD_ID() = '${id}'`;
-         
-         const records = await getRecords(process.env.AIRTABLE_ORDERS_TABLE, { filterByFormula: filterStr });
-         if (records.length > 0) {
-           return NextResponse.json({ _recordId: records[0].id, ...records[0].fields });
-         }
-         return NextResponse.json({ error: 'Not found' }, { status: 404 });
+        // Fallback to record ID if needed
+        let filterStr = `{orderId} = '${id}'`;
+        if (id.startsWith('rec')) filterStr = `RECORD_ID() = '${id}'`;
+
+        const records = await getRecords(process.env.AIRTABLE_ORDERS_TABLE, { filterByFormula: filterStr });
+        if (records.length > 0) {
+          return NextResponse.json({ _recordId: records[0].id, ...records[0].fields });
+        }
+        return NextResponse.json({ error: 'Not found' }, { status: 404 });
       }
-      
+
       const records = await getRecords(process.env.AIRTABLE_ORDERS_TABLE);
       return NextResponse.json(records.map(r => ({ _recordId: r.id, ...r.fields })));
     }
@@ -58,11 +58,11 @@ export async function GET(request) {
 
       const records = await getRecords(process.env.AIRTABLE_ORDERS_TABLE, { filterByFormula: filterStr });
       if (records.length > 0) {
-         return NextResponse.json({ _recordId: records[0].id, ...records[0].fields, status: records[0].fields.status || records[0].fields.Status });
+        return NextResponse.json({ _recordId: records[0].id, ...records[0].fields, status: records[0].fields.status || records[0].fields.Status });
       }
       return NextResponse.json({ error: 'Not found' }, { status: 404 });
     }
-    
+
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   } catch (error) {
     await logErrorToTelegram(error, 'GET /api/orders');
@@ -99,7 +99,7 @@ export async function POST(request) {
       product: sanitize(body.productName),
       price: Number(body.priceUSD) || 0,
       paymentMethod: resolvedMethod,
-      image: body.productImage, 
+      image: body.productImage,
       status: body.status || 'Pending',
       confirmedDate: body.confirmedDate || null,
       orderDate: new Date().toISOString(),
@@ -107,71 +107,49 @@ export async function POST(request) {
 
     // Safely try to include orderId if possible, but don't let it crash the request
     if (body.id) {
-       newOrderFields.orderId = body.id;
+      newOrderFields.orderId = body.id;
     }
 
-    const { createRecord, getTableFields } = await import('@/lib/airtable');
-    
-    // ROOT CAUSE FIX: Fetch actual field names from Airtable to avoid mismatch errors
-    const availableFields = await getTableFields(process.env.AIRTABLE_ORDERS_TABLE);
-    console.log('DEBUG: Available fields in Airtable:', availableFields);
-    
-    // Create the final payload by only including fields that actually exist in the base
-    const finalFields = {};
-    
-    // Define a map of our local names to possible Airtable names (casing variations)
-    const fieldMapping = {
-      userName: ['userName'],
-      telegram_id: ['telegramId', 'telegram_id'],
-      contact: ['contact'],
-      product: ['product'],
-      price: ['price'],
-      paymentMethod: ['paymentMethod'],
-      status: ['status'],
-      confirmedDate: ['confirmedDate'],
-      orderDate: ['orderDate'],
+    const { createRecord } = await import('@/lib/airtable');
+
+    // As requested: removed getTableFields and use static mapping directly from the first slot
+    const finalFields = {
+      userName: newOrderFields.userName,
+      telegramId: newOrderFields.telegram_id,
+      contact: newOrderFields.contact,
+      product: newOrderFields.product,
+      price: newOrderFields.price,
+      paymentMethod: newOrderFields.paymentMethod,
+      status: newOrderFields.status,
+      confirmedDate: newOrderFields.confirmedDate,
+      orderDate: newOrderFields.orderDate,
     };
 
-    // Populate finalFields based on available columns
-    for (const [key, alternatives] of Object.entries(fieldMapping)) {
-      const match = alternatives.find(alt => availableFields.includes(alt)) || availableFields.find(f => f.toLowerCase() === alternatives[0].toLowerCase());
-      if (match && newOrderFields[key] !== undefined) {
-        let val = newOrderFields[key];
-        
-        // Attempt numeric conversion for fields that look like they should be numbers (like telegramId)
-        if (key === 'telegramId' || key === 'price') {
-          const num = Number(val);
-          if (!isNaN(num)) val = num;
-        }
-        
-        finalFields[match] = val;
-      }
+    if (newOrderFields.orderId) {
+      finalFields.orderId = newOrderFields.orderId;
     }
 
-    // Special case for orderId (if it's a Number field in Airtable, it might fail with string ID)
-    // Looking at the image, orderid 33, 34 suggests it's a number.
-    // We will only send it if it doesn't look like an Autonumber (i.e. if it's empty in record creation)
-    // But generally, safer to let Airtable manage its IDs if we are not sure.
+    if (finalFields.telegramId) {
+      finalFields.telegramId = String(finalFields.telegramId); // Telegram IDs are safer as strings to prevent Airtable type mismatches
+    }
 
     let created;
     try {
       created = await createRecord(process.env.AIRTABLE_ORDERS_TABLE, finalFields);
     } catch (e) {
       console.error('Airtable creation failed with mapped fields, trying stripped version:', e.message);
-      // Last ditch effort: try without orderid in case it's a formula/auto field
       const strippedFields = { ...finalFields };
-      const idKey = Object.keys(strippedFields).find(k => k.toLowerCase().includes('id'));
-      if (idKey) delete strippedFields[idKey];
-      
+      delete strippedFields.orderId;
+
       created = await createRecord(process.env.AIRTABLE_ORDERS_TABLE, strippedFields);
     }
-    
+
     return NextResponse.json({ ...newOrderFields, id: created.id, _recordId: created.id });
   } catch (error) {
     await logErrorToTelegram(error, 'POST /api/orders');
     console.error('Airtable Error Detail:', error);
-    return NextResponse.json({ 
-      error: 'Airtable Creation Failed', 
+    return NextResponse.json({
+      error: 'Airtable Creation Failed',
       details: error.message,
       stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
     }, { status: 500 });
@@ -181,7 +159,7 @@ export async function POST(request) {
 export async function PATCH(request) {
   try {
     const { recordId, secret, ...updateFields } = await request.json();
-    
+
     const { cookies } = await import('next/headers');
     const cookieStore = await cookies();
     const token = cookieStore.get('admin_token')?.value;
@@ -194,39 +172,22 @@ export async function PATCH(request) {
       return NextResponse.json({ error: 'Missing recordId' }, { status: 400 });
     }
 
-    const { updateRecord, getTableFields } = await import('@/lib/airtable');
-    
-    // Field mapping for PATCH (similar to POST)
-    const availableFields = await getTableFields(process.env.AIRTABLE_ORDERS_TABLE);
+    const { updateRecord } = await import('@/lib/airtable');
+
     const finalUpdateFields = {};
-    const fieldMapping = {
-      status: ['status'],
-      confirmedDate: ['confirmedDate']
-    };
-
-    for (const [key, alternatives] of Object.entries(fieldMapping)) {
-      const match = alternatives.find(alt => availableFields.includes(alt)) || availableFields.find(f => f.toLowerCase() === alternatives[0].toLowerCase());
-      if (match && updateFields[key] !== undefined) {
-        finalUpdateFields[match] = updateFields[key];
-      }
-    }
-
-    // If no mapping found for status, fallback to a best guess if it's provided
-    if (updateFields.status && !finalUpdateFields.status && !finalUpdateFields.Status) {
-        finalUpdateFields['status'] = updateFields.status; 
-    }
+    if (updateFields.status !== undefined) finalUpdateFields.status = updateFields.status;
+    if (updateFields.confirmedDate !== undefined) finalUpdateFields.confirmedDate = updateFields.confirmedDate;
 
     let updated;
     try {
       updated = await updateRecord(process.env.AIRTABLE_ORDERS_TABLE, recordId, finalUpdateFields);
     } catch (e) {
       console.error('Update failed, retrying with direct status:', e.message);
-      // Fallback for strict schemas
       if (updateFields.status) {
         try {
-           updated = await updateRecord(process.env.AIRTABLE_ORDERS_TABLE, recordId, { Status: updateFields.status });
+          updated = await updateRecord(process.env.AIRTABLE_ORDERS_TABLE, recordId, { Status: updateFields.status });
         } catch (e2) {
-           throw e;
+          throw e;
         }
       } else {
         throw e;

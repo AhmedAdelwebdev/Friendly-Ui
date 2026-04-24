@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { fetchProducts } from '@/lib/data';
-import { logErrorToTelegram } from '@/lib/error-logger';
+import { logErrorToTelegram } from '@/lib/logError';
 
 export const dynamic = 'force-dynamic';
 
