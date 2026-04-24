@@ -29,7 +29,7 @@
 }
 
 
-* :not(.duration-500) { 
+* :not(.duration-500, .ok-duration) { 
   transition: 
     background-color var(--transition-speed) var(--transition-ease),
     color var(--transition-speed) var(--transition-ease),
@@ -64,7 +64,7 @@ body {
 }
 
 :is(h1, h2, h3, h4, .font-heading) {
-  font-family: var(--font-fugaz), cursive;
+  font-family: var(--font-fugaz);
 }
 
 .grid-products {

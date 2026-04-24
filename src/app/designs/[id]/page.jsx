@@ -71,7 +71,7 @@ export default function ProductDetailPage() {
   return (
     <div className="min-h-screen">
       <div className="mx-auto px-6 py-10">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-10 items-start">
           <ProductGallery images={item.images} title={item.title} category={item.category} />
           <ProductInfo
             item={item}

@@ -33,7 +33,7 @@ export const ProductInfo = ({ item, isPurchased, onBuy }) => {
   ];
 
   return (
-    <div className="space-y-8 reveal animate-up lg:col-span-7">
+    <div className="space-y-8 reveal animate-up md:col-span-7">
 
       {/* Header */}
       <div className="reveal animate-up">
@@ -94,18 +94,18 @@ export const ProductInfo = ({ item, isPurchased, onBuy }) => {
         {isProduct ? (
           <>
             {isPurchased ? (
-              <Link href={getDownloadLink(item.fileLink)} className="flex-1 bg-green-500 text-white min-h-16 shadow-sm rounded-full text-base font-bold flex items-center justify-center gap-3 hover:-translate-y-1 duration-200 active:scale-95" target="_blank" rel="noopener noreferrer">
+              <Link href={getDownloadLink(item.fileLink)} className="flex-1 bg-green-500 text-white min-h-16 shadow-sm rounded-full text-base font-bold flex items-center justify-center gap-3 hover:-translate-y-1 duration-200 ok-duration active:scale-95" target="_blank" rel="noopener noreferrer">
                 <Download size={24} strokeWidth={2.5} />
                 Download Files
               </Link>
             ) : (
-              <button onClick={() => onBuy(item)} className="flex-1 bg-primary text-white min-h-16 shadow-sm rounded-full text-base font-bold flex items-center justify-center gap-3 hover:-translate-y-1 duration-200 active:scale-95" >
+              <button onClick={() => onBuy(item)} className="flex-1 bg-primary text-white min-h-16 shadow-sm rounded-full text-base font-bold flex items-center justify-center gap-3 hover:-translate-y-1 duration-200 ok-duration active:scale-95" >
                 <ShoppingCart size={24} strokeWidth={2.5} />
                 Buy Now
               </button>
             )}
 
-            <Link href="https://t.me/Friendly_Ui" target="_blank" className="flex-1 text-gray-700 min-h-16 shadow-sm rounded-full text-base font-bold flex items-center justify-center gap-3 bg-white hover:-translate-y-1 hover:bg-gray-200 duration-200 active:scale-95" >
+            <Link href="https://t.me/Friendly_Ui" target="_blank" className="flex-1 text-gray-700 min-h-16 shadow-sm rounded-full text-base font-bold flex items-center justify-center gap-3 bg-white hover:-translate-y-1 hover:bg-gray-200 duration-200 ok-duration active:scale-95" >
               <MessageCircle size={24} />
               Custom Version
             </Link>

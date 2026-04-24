@@ -109,7 +109,7 @@ export default function ClientProviders({ children }) {
 
   return (
     <ThemeProvider>
-      {loading && <LoadingOverlay message="Friendly UI" />}
+      {loading && <LoadingOverlay />}
       {isAppReady && <ScrollReveal />}
       <NotificationProvider>
         <GlobalErrorHandler>

@@ -75,7 +75,7 @@ export default async function RootLayout({ children }) {
   const protocol = h.get("x-forwarded-proto") || "http";
 
   return (
-    <html lang="en" className={`${fugazOne.variable} ${baloo2.variable} ${tajawal.variable} h-full antialiased`} suppressHydrationWarning >
+    <html lang="en" className={`${fugazOne.variable} ${baloo2.variable} ${tajawal.variable} h-full antialiased`} data-scroll-behavior="smooth" suppressHydrationWarning >
       <head>
         <script type="application/ld+json" dangerouslySetInnerHTML={{
           __html: JSON.stringify({
@@ -106,7 +106,7 @@ export default async function RootLayout({ children }) {
 
       <body className="min-h-full w-full maxWidth mx-auto flex flex-col font-baloo selection:bg-primary/20" suppressHydrationWarning>
         <ClientProviders>
-          {/* <SecurityLock /> */}
+          <SecurityLock />
           <Header />
           <CartSidebar />
           <PaymentModal host={host} protocol={protocol} />

@@ -19,7 +19,7 @@ export const translations = {
     pending: "Under Review",
     completed: "Completed",
     failed: "Failed",
-    languageToggle: "الترجمة الي لعربية",
+    languageToggle: "الترجمة الى العربية",
   },
   ar: {
     orderReceivedTitle: "تم استلام طلبك",

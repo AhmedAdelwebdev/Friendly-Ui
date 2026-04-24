@@ -22,10 +22,10 @@ export const Header = () => {
         {/* Logo */}
         <Link href="/" className="flex items-center gap-3 group">
           <Image src="/Friendly-Ui.png" loading="eager" alt="" width={45} height={45} unoptimized
-            className="size-12 sm:size-14 group-hover:scale-105 duration-300!"
+            className="size-12 sm:size-14 group-hover:scale-105 duration-300 ok-duration"
           />
           <div className="flex flex-col leading-tight">
-            <span className="font-heading text-lg sm:text-xl text-primary not-italic">Friendly Ui</span>
+            <span className="font-heading text-lg sm:text-xl text-primary">Friendly Ui</span>
             <span className="text-black/70 text-xs sm:text-sm font-medium -mt-1">Ui/Ux Platform</span>
           </div>
         </Link>
@@ -39,15 +39,15 @@ export const Header = () => {
 
           {/* Right Side */}
           <div className="flex items-center gap-3">
-            <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="sm:hidden p-2 hover:bg-primary/20 rounded-xl">
+            <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="sm:hidden p-2 hover:bg-primary/10 text-gray-600 dark:text-gray-400 rounded-xl">
               {isMenuOpen ? <X size={20} /> : <Menu size={20} />}
             </button>
 
-            <button onClick={toggleTheme} className="p-2 hover:bg-primary/5 rounded-xl transition-colors text-gray-600 dark:text-gray-400 hover:text-primary" aria-label="Toggle Theme" >
+            <button onClick={toggleTheme} className="p-2 hover:bg-primary/10 rounded-xl transition-colors text-gray-600 dark:text-gray-400 hover:text-primary" aria-label="Toggle Theme" >
               {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
             </button>
 
-            <button onClick={() => setIsOrdersOpen(true)} className="relative p-2 hover:bg-primary/5 rounded-xl transition-colors group" >
+            <button onClick={() => setIsOrdersOpen(true)} className="relative p-2 hover:bg-primary/10 rounded-xl transition-colors group" >
               <ShoppingBag size={20} className="text-gray-600 dark:text-gray-400 group-hover:text-primary transition-colors" />
               {orders.length > 0 && (
                 <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-primary text-white text-[9px] flex items-center justify-center rounded-full ">
@@ -61,7 +61,7 @@ export const Header = () => {
       </div>
 
       {/* Mobile Menu */}
-      <div className={`absolute top-16 left-0 right-0 md:hidden border-t border-gray-100 overflow-hidden py-3 px-4 flex flex-col gap-1 transition-all duration-300 ease-out *:hover:bg-primary/20 bg-white backdrop-blur-2xl shadow shadow-black/5
+      <div className={`absolute top-16 left-0 right-0 md:hidden border-t border-gray-100 overflow-hidden py-3 px-4 flex flex-col gap-1 transition-all ok-duration duration-300 ease-out *:hover:bg-primary/20 bg-white backdrop-blur-2xl shadow shadow-black/5
         ${isMenuOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
 
         <Link href="/designs" onClick={() => setIsMenuOpen(false)} className="py-2.5 px-3 text-base text-gray-700 dark:text-gray-300 rounded-xl transition-all flex items-center gap-3">

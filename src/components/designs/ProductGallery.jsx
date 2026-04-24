@@ -41,7 +41,7 @@ export const ProductGallery = ({ images = [], title }) => {
   };
 
   return (
-    <div className="space-y-4 lg:col-span-5 revealanimate-up">
+    <div className="space-y-4 md:col-span-5 revealanimate-up">
 
       {/* Slider */}
       <div

@@ -58,9 +58,9 @@ export default function OrderPage({ params }) {
   if (loading) return <LoadingOverlay />;
   if (error || !order) return (
     <div className="min-h-screen flex items-center justify-center p-4">
-      <div className="bg-red-50 text-red-600 p-6 rounded-2xl text-center">
+      <div className="bg-red-500/20 dark:bg-transparent border border-red-500/30 text-red-600 p-6 rounded-2xl text-center max-w-sm">
         <XCircle className="w-12 h-12 mx-auto mb-4 opacity-50" />
-        <h2 className="text-xl mb-2">Order Not Found</h2>
+        <h2 className="text-xl mb-2">Order Not Found</h2> 
         <p>The order ID you provided is invalid or the order has been removed.</p>
       </div>
     </div>
