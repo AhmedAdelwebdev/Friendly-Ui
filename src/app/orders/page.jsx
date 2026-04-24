@@ -252,14 +252,15 @@ export default function OrdersDashboard() {
         throw new Error('No valid numeric Telegram ID found for this customer. Please check the telegramId/contact field.');
       }
 
-      // 2. Try Delivery FIRST
-      const deliveryRes = await fetch('/api/delivery', {
+      const deliveryRes = await fetch('/api/telegram', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          type: 'ready',
           telegramId: telegramId,
           order: { name: order.userName, productName: order.product || 'Your Product' },
-          fileLink
+          fileLink,
+          orderId: recordId
         }),
       });
 

@@ -33,7 +33,7 @@ export const ProductInfo = ({ item, isPurchased, onBuy }) => {
   ];
 
   return (
-    <div className="space-y-8 reveal animate-up sm:col-span-7">
+    <div className="space-y-8 reveal animate-up lg:col-span-7">
 
       {/* Header */}
       <div className="reveal animate-up">

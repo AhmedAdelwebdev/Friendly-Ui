@@ -14,10 +14,9 @@ export const CartSidebar = () => {
 
   return (
     <div 
-      className={`fixed inset-0 z-[150] backdrop-blur-sm 
-        transition-all duration-500 ease-out
+      className={`fixed inset-0 z-[150] backdrop-blur-sm transition-all duration-500 ease-out
         ${isOrdersOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
-      onClick={() => setIsOrdersOpen(false)} // إغلاق بالضغط على الخلفية
+      onClick={() => setIsOrdersOpen(false)} 
     >
       {/* Sidebar نفسه */}
       <div 

@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
 
 export const Footer = () => {
@@ -11,15 +12,21 @@ export const Footer = () => {
       <div className="maxWidth mx-auto px-4 py-5">
 
         {/* Top */}
-        <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+        <div className="flex items-center justify-between gap-4">
 
-          {/* Brand */}
-          <Link href="/" className="text-lg sm:text-2xl font-heading text-primary">
-            Friendly UI
+          {/* Logo */}
+          <Link href="/" className="flex items-center gap-3 group">
+            <Image src="/Friendly-Ui.png" loading="eager" alt="" width={45} height={45} unoptimized
+              className="size-12 sm:size-14 group-hover:scale-105 duration-300!"
+            />
+            <div className="flex flex-col leading-tight">
+              <span className="font-heading text-lg sm:text-xl text-primary">Friendly Ui</span>
+              <span className="text-black/70 text-xs sm:text-sm font-medium -mt-1">Ui/Ux Platform</span>
+            </div>
           </Link>
 
           {/* Links */}
-          <div className="flex items-center gap-6 text-sm sm:text-xl text-gray-500">
+          <div className="hidden sm:flex items-center gap-6 text-sm sm:text-xl text-gray-500">
             <Link href="/designs" className="hover:text-primary transition">
               Designs
             </Link>
@@ -31,7 +38,7 @@ export const Footer = () => {
           {/* CTA */}
           <Link
             href="https://t.me/Friendly_Ui" target="_blank"
-            className="text-sm sm:text-lg bg-primary text-white px-4 sm:px-8 py-2 rounded-full hover:opacity-90 transition"
+            className="text-base sm:text-lg bg-primary text-white px-4 sm:px-8 py-2 rounded-full hover:opacity-90 transition"
           >
             Contact Me
           </Link>

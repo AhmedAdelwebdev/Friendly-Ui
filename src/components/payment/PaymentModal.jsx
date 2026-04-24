@@ -408,14 +408,16 @@ export const PaymentModal = () => {
       // Notify Customer (Pending Message)
       const currentTgId = telegramId || localStorage.getItem('friendly_chat_id');
       
-      const notifyResp = await fetch('/api/telegram/received', {
+      const notifyResp = await fetch('/api/telegram', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          type: 'received',
           telegramId: currentTgId,
           name: userInfo.name,
           contact: userInfo.contact,
-          productName: activeItem.title
+          productName: activeItem.title,
+          orderId: finalId
         })
       });
 
@@ -485,13 +487,15 @@ export const PaymentModal = () => {
       // Auto-deliver via Telegram for PayPal
       const currentTgId = telegramId || localStorage.getItem('friendly_chat_id');
       
-      const deliverResp = await fetch('/api/delivery', {
+      const deliverResp = await fetch('/api/telegram', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          type: 'ready',
           telegramId: currentTgId,
           order: { name: userInfo.name, productName: activeItem.title, contact: userInfo.contact },
-          fileLink: activeItem.fileLink
+          fileLink: activeItem.fileLink,
+          orderId: finalId
         })
       });
 

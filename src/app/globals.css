@@ -29,7 +29,7 @@
 }
 
 
-* {
+* :not(.duration-500) { 
   transition: 
     background-color var(--transition-speed) var(--transition-ease),
     color var(--transition-speed) var(--transition-ease),
@@ -67,7 +67,7 @@ body {
 }
 
 .grid-products {
-  grid-template-columns: repeat(auto-fill, minmax(200px, auto));
+  grid-template-columns: repeat(auto-fill, minmax(250px, auto));
 }
 
 @layer base {

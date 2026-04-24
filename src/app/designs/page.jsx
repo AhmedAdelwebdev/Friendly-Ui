@@ -88,7 +88,7 @@ export default function DesignsPage() {
   }, [currentPage]);
 
   return (
-    <div className="py-10 md:py-16">
+    <div className="py-10 md:py-16 sm:px-10">
       {/* Loading */}
       {loading && items.length === 0 && (
         <LoadingOverlay />
