@@ -19,7 +19,7 @@ export default function AboutPage() {
           <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-20">
             {/* Image Area */}
             <div className="relative w-full max-w-sm animate-zoom-in reveal animate-up">
-              <div className="absolute inset-0 m-auto size-3/4 bg-primary dark:bg-primary/50 blur-3xl rounded-full"></div>
+              <div className="absolute inset-0 m-auto size-3/4 dark:bg-primary/50 blur-3xl rounded-full"></div>
               <div className="relative z-10 aspect-square rotate-2 hover:rotate-0 duration-500 reveal animate-up">
                 <Image src="/Friendly-Ui.png" className="size-full" width={100} height={100} alt="" unoptimized />
               </div>
