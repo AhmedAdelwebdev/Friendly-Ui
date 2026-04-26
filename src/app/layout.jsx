@@ -102,6 +102,14 @@ export default async function RootLayout({ children }) {
             } catch (_) {}
           `
         }} />
+
+        <script type="text/javascript">
+          (function(c,l,a,r,i,t,y){
+            c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+            t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+            y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+          })(window, document, "clarity", "script", "whgn0n24yu");
+        </script>
       </head>
 
       <body className="min-h-full w-full maxWidth mx-auto flex flex-col font-baloo selection:bg-primary/20" suppressHydrationWarning>
