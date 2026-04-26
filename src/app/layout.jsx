@@ -7,7 +7,6 @@ import { PaymentModal } from "@/components/payment/PaymentModal";
 import ClientProviders from "@/components/ClientProviders";
 import SecurityLock from "@/components/SecurityLock";
 import { headers } from "next/headers";
-import Script from "next/script";
 
 const fugazOne = Fugaz_One({
   weight: "400",
@@ -90,6 +89,7 @@ export default async function RootLayout({ children }) {
             }
           })
         }} />
+        
         <script dangerouslySetInnerHTML={{
           __html: `
             try {
@@ -103,15 +103,16 @@ export default async function RootLayout({ children }) {
           `
         }} />
 
-        <Script id="clarity" strategy="afterInteractive">
-          {`
+        <script type="text/javascript" dangerouslySetInnerHTML={{
+          __html: `
             (function(c,l,a,r,i,t,y){
               c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
               t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
               y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
             })(window, document, "clarity", "script", "whgn0n24yu");
-          `}
-        </Script>
+          `
+       }} />
+        
       </head>
 
       <body className="min-h-full w-full maxWidth mx-auto flex flex-col font-baloo selection:bg-primary/20" suppressHydrationWarning>
